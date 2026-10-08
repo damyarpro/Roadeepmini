@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "id": "squarespace",
+  "name": "Squarespace Commerce",
+  "category": "commerce",
+  "color": "#A0A0A0",
+  "desc": {
+    "fa": "سفارش‌های تازهٔ فروشگاه Squarespace؛ سفارش تازه که بیاید خبرت می‌کند.",
+    "en": "Latest orders in your Squarespace store; tells you when a new one arrives."
+  },
+  "keyUrl": "https://developers.squarespace.com/commerce-apis/authentication-and-permissions",
+  "docsUrl": "https://developers.squarespace.com/commerce-apis/orders-overview",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "API key",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9\\-]{30,80}$",
+      "help": {
+        "fa": "در ⁨Settings → Developer API keys⁩ کلیدی با دسترسی خواندن ⁨Orders⁩ بساز.",
+        "en": "Create a key with read access to Orders in Settings → Developer API keys."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.squarespace.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.squarespace.com/1.0/commerce/orders",
+    "headers": { "Accept": "application/json" }
+  },
+  "list": {
+    "path": "/result",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/orderNumber",
+    "subtitle": "/grandTotal/value",
+    "status": "/fulfillmentStatus",
+    "time": "/createdOn"
+  },
+  "statusMap": { "PENDING": "warn", "FULFILLED": "ok", "CANCELED": "off", "*": "info" },
+  "openUrl": "https://account.squarespace.com/",
+  "webHosts": ["account.squarespace.com"],
+  "pollEvery": 300,
+  "notify": { "on": "new" }
+}

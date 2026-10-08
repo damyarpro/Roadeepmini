@@ -1,0 +1,43 @@
+.settings-dashboard-shell {height:100%; min-width:0;}
+.settings-stage {height:100%; padding:var(--sp-5); overflow-y:auto;}
+.settings-dashboard-header {position:sticky; top:0; z-index:5; background:var(--bg); display:flex; align-items:center; max-width:1040px; margin-inline:auto; gap:var(--sp-4); padding-top:var(--sp-3); padding-bottom:var(--sp-4); margin-bottom:var(--sp-4); border-bottom:1px solid var(--divider);}
+.settings-heading {flex:1; min-width:0;}
+.settings-app-label {font-size:var(--fs-small); color:var(--text-2);}
+.settings-destination-title {font-size:var(--fs-h1); font-weight:600; line-height:1.6;}
+.settings-back {display:flex; align-items:center; gap:var(--sp-2); min-height:44px; white-space:nowrap;}
+[dir="rtl"] .settings-back svg {transform:rotate(180deg);}
+.settings-overview,.settings-pane-host {max-width:1040px; margin-inline:auto;}
+.settings-overview-title {position:absolute; width:1px; height:1px; clip-path:inset(50%); overflow:hidden;}
+.settings-category-groups {display:flex; flex-direction:column; gap:var(--sp-4);}
+.settings-group-title {font-size:var(--fs-hint); font-weight:500; margin-bottom:var(--sp-2); color:var(--text-2);}
+.settings-category-grid {display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--sp-3);}
+.settings-overview-footer {display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:var(--sp-3); margin-top:var(--sp-5); color:var(--text-2); font-size:var(--fs-small);}
+.settings-category-tile {position:relative; min-width:0; background:var(--surface-2); border:1px solid var(--divider); border-radius:var(--radius);}
+.settings-category {width:100%; min-height:96px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--sp-2); padding:var(--sp-3); border:0; background:transparent; text-align:center; border-radius:var(--radius);}
+.settings-category:hover {background:var(--surface-hover);}
+.settings-category-icon {display:flex; align-items:center; justify-content:center; width:32px; height:32px; flex-shrink:0; color:var(--text-2);}
+.settings-category-title {font-size:var(--fs-h2); font-weight:500; line-height:1.6; overflow-wrap:anywhere;}
+.settings-category-tile > .settings-help {display:block;}
+.settings-category-tile > .settings-help > .settings-help-button {position:absolute; inset-inline-end:var(--sp-1); top:var(--sp-1);}
+.settings-category-tile > .settings-help > .settings-help-content {margin:0 var(--sp-3) var(--sp-3);}
+.settings-pane-host > .sec-wrap {margin:0; padding:0; border:0; animation:none;}
+.settings-pane-host > .sec-wrap::before {display:none;}
+.settings-pane-host .sec-stack {display:flex; flex-direction:column; gap:var(--sp-5);}
+.settings-pane-host :is(select,input[type="number"],button.seg,.shortcut-rec) {min-height:44px;}
+.settings-pane-host input[type="range"] {height:44px; padding:0; border:0; background:transparent;}
+.settings-pane-host input[type="range"]::-webkit-slider-runnable-track {height:4px; background:var(--surface-5); border-radius:var(--radius-full);}
+.settings-pane-host input[type="range"]::-webkit-slider-thumb {margin-top:-6px;}
+.settings-pane-host input[type="range"]::-moz-range-track {height:4px; background:var(--surface-5); border-radius:var(--radius-full);}
+.settings-pane-host input[type="range"]::-moz-range-thumb {width:16px; height:16px; border:0; border-radius:50%; background:var(--text); box-shadow:0 0 0 1px var(--control-edge);}
+.settings-pane-host .set-row {min-height:44px;}
+.settings-pane-host button.switch::before {inset:calc(50% - 22px); width:44px; height:44px;}
+@media(max-width:600px) {
+ .settings-stage {padding:var(--sp-4);}
+ .settings-dashboard-header {flex-wrap:wrap; gap:var(--sp-3); margin-bottom:var(--sp-4); padding-bottom:var(--sp-4);}
+ .settings-back {order:3; width:100%; justify-content:center;}
+ .settings-category-grid {gap:var(--sp-3);}
+ .settings-category {min-height:104px;}
+ .settings-category-icon {border:0; width:32px; height:32px;}
+ .settings-category-title {font-size:var(--fs-body);}
+}
+@media(max-width:420px) {.settings-category-grid {grid-template-columns:repeat(2,minmax(0,1fr));}.settings-category {min-height:80px;}}

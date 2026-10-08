@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "id": "todoist",
+  "name": "Todoist",
+  "category": "work",
+  "color": "#E44332",
+  "desc": {
+    "fa": "کارهای امروز و عقب‌افتادهٔ Todoist.",
+    "en": "Your Todoist tasks due today or overdue."
+  },
+  "keyUrl": "https://app.todoist.com/app/settings/integrations/developer",
+  "docsUrl": "https://developer.todoist.com/api/v1/",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API", "en": "API token" },
+      "placeholder": "40 hex",
+      "optional": false,
+      "pattern": "^[a-f0-9]{40}$"
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.todoist.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.todoist.com/api/v1/tasks/filter",
+    "query": { "query": "today | overdue", "limit": "20" }
+  },
+  "list": {
+    "path": "/results",
+    "max": 10,
+    "id": "/id",
+    "title": "/content",
+    "subtitle": "/due/date",
+    "url": "https://app.todoist.com/app/task/{item./id}"
+  },
+  "openUrl": "https://app.todoist.com/app/today",
+  "webHosts": ["app.todoist.com"],
+  "pollEvery": 300
+}

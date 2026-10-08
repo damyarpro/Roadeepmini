@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "id": "polar",
+  "name": "Polar",
+  "category": "payments",
+  "color": "#0062FF",
+  "desc": {
+    "fa": "سفارش‌های تازهٔ Polar؛ فروش تازه که ثبت شود خبرت می‌کند.",
+    "en": "Latest Polar orders; tells you when a new sale comes in."
+  },
+  "keyUrl": "https://polar.sh/dashboard",
+  "docsUrl": "https://polar.sh/docs/api-reference/orders/list-orders",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن دسترسی سازمان", "en": "Organization access token" },
+      "placeholder": "polar_oat_…",
+      "optional": false,
+      "pattern": "^polar_(oat|pat)_[A-Za-z0-9]{20,100}$",
+      "help": {
+        "fa": "در تنظیمات سازمان یک توکن با دسترسی ⁨orders:read⁩ بساز.",
+        "en": "Create a token with the orders:read scope in your organization settings."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.polar.sh"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.polar.sh/v1/orders/",
+    "headers": { "Accept": "application/json" },
+    "query": { "limit": "10", "sorting": "-created_at" }
+  },
+  "list": {
+    "path": "/items",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/product/name",
+    "subtitle": "/customer/email",
+    "status": "/status",
+    "time": "/created_at"
+  },
+  "statusMap": {
+    "paid": "ok",
+    "pending": "info",
+    "partially_refunded": "info",
+    "refunded": "off",
+    "*": "info"
+  },
+  "count": "/pagination/total_count",
+  "openUrl": "https://polar.sh/dashboard",
+  "webHosts": ["polar.sh"],
+  "pollEvery": 300,
+  "notify": { "on": "new", "statuses": ["ok"] }
+}

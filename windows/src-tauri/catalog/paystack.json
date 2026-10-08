@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "id": "paystack",
+  "name": "Paystack",
+  "category": "payments",
+  "color": "#00C3F7",
+  "desc": {
+    "fa": "تراکنش‌های تازهٔ Paystack؛ پرداخت موفق تازه که بیاید خبرت می‌کند.",
+    "en": "Latest Paystack transactions; tells you about each successful one."
+  },
+  "keyUrl": "https://dashboard.paystack.com/",
+  "docsUrl": "https://paystack.com/docs/api/transaction/",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "کلید محرمانه", "en": "Secret key" },
+      "placeholder": "sk_live_…",
+      "optional": false,
+      "pattern": "^sk_(live|test)_[A-Za-z0-9]{30,64}$",
+      "help": {
+        "fa": "در داشبورد: ⁨Settings → API Keys & Webhooks⁩",
+        "en": "In the dashboard: Settings → API Keys & Webhooks."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.paystack.co"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.paystack.co/transaction",
+    "query": { "perPage": "10" }
+  },
+  "list": {
+    "path": "/data",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/customer/email",
+    "subtitle": "/reference",
+    "status": "/status",
+    "time": "/created_at"
+  },
+  "statusMap": {
+    "success": "ok",
+    "failed": "err",
+    "abandoned": "off",
+    "reversed": "off",
+    "ongoing": "info",
+    "pending": "info",
+    "processing": "info",
+    "queued": "info",
+    "*": "info"
+  },
+  "count": "/meta/total",
+  "openUrl": "https://dashboard.paystack.com/",
+  "webHosts": ["dashboard.paystack.com"],
+  "pollEvery": 120,
+  "notify": { "on": "new", "statuses": ["ok"] }
+}

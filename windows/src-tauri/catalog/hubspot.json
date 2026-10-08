@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "id": "hubspot",
+  "name": "HubSpot",
+  "category": "commerce",
+  "color": "#FF7A59",
+  "desc": {
+    "fa": "معامله‌های تازهٔ HubSpot CRM و مرحلهٔ هرکدام.",
+    "en": "The newest deals in HubSpot CRM and the stage each one is in."
+  },
+  "keyUrl": "https://developers.hubspot.com/docs/api/private-apps",
+  "docsUrl": "https://developers.hubspot.com/docs/api/crm/search",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن اپ خصوصی", "en": "Private app token" },
+      "placeholder": "pat-na1-…",
+      "optional": false,
+      "pattern": "^pat-[a-z0-9]{2,4}-[a-f0-9\\-]{36}$",
+      "help": {
+        "fa": "یک اپ خصوصی با دسترسی ⁨crm.objects.deals.read⁩ بساز.",
+        "en": "Create a private app with the crm.objects.deals.read scope."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.hubapi.com"],
+  "request": {
+    "method": "POST",
+    "url": "https://api.hubapi.com/crm/v3/objects/deals/search",
+    "headers": { "Accept": "application/json", "Content-Type": "application/json" },
+    "body": {
+      "sorts": [{ "propertyName": "createdate", "direction": "DESCENDING" }],
+      "properties": ["dealname", "amount", "dealstage"],
+      "limit": 10
+    }
+  },
+  "list": {
+    "path": "/results",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/properties/dealname",
+    "subtitle": "/properties/amount",
+    "status": "/properties/dealstage",
+    "time": "/createdAt"
+  },
+  "statusMap": { "closedwon": "ok", "closedlost": "off", "*": "info" },
+  "count": "/total",
+  "openUrl": "https://app.hubspot.com/",
+  "webHosts": ["app.hubspot.com"],
+  "pollEvery": 300,
+  "notify": { "on": "new" }
+}

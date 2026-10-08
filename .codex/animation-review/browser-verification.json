@@ -1,0 +1,45 @@
+{
+  "live": [
+    {
+      "state": "question",
+      "animation": "curious"
+    },
+    {
+      "state": "error",
+      "animation": "shake"
+    },
+    {
+      "state": "approval",
+      "animation": "bounce"
+    },
+    {
+      "state": "finished",
+      "animation": "spin"
+    }
+  ],
+  "hidden": {
+    "first": {
+      "count": 950,
+      "mode": "hidden",
+      "running": false
+    },
+    "second": {
+      "count": 950,
+      "mode": "hidden",
+      "running": false
+    },
+    "extraFrames": 0
+  },
+  "reduced": true,
+  "keyboard": true,
+  "timerPauseResume": true,
+  "liveContextContinuation": true,
+  "completedReplay": true,
+  "responsiveWidths": [
+    320,
+    375,
+    768,
+    1440
+  ],
+  "errors": []
+}

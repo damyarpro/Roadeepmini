@@ -1,0 +1,13 @@
+{
+  "version": "0.1.5",
+  "installedBinaryMatches": true,
+  "installedSha256": "e92af67b07a19d05ba6b3d5272c9d78e746097e1cec50fb6e3784d41fbd9ad99",
+  "runtimeFilesVerified": 518,
+  "installerBytes": 1641044256,
+  "installerSha256": "7f5df40f2d8dbdd873dcae0d78abe655347232202cac9e4acc1a7fae7c84d6ba",
+  "rollingInstallerMatches": true,
+  "installedRelayMatches": true,
+  "installedRelaySha256": "c1f5290743afb75bddf65460fc3e04769187f0061b33d6e486f1c912916e42c8",
+  "installedAppResponding": true,
+  "processId": 263912
+}

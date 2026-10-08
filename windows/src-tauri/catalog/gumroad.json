@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "id": "gumroad",
+  "name": "Gumroad",
+  "category": "commerce",
+  "color": "#FF90E8",
+  "desc": {
+    "fa": "فروش‌های تازهٔ Gumroad؛ هر فروش تازه را خبر می‌دهد.",
+    "en": "Your latest Gumroad sales; tells you about each new one."
+  },
+  "keyUrl": "https://app.gumroad.com/settings/advanced",
+  "docsUrl": "https://app.gumroad.com/api",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن دسترسی", "en": "Access token" },
+      "placeholder": "Application access token",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9_\\-]{20,100}$",
+      "help": {
+        "fa": "در ⁨Settings → Advanced⁩ یک ⁨Application⁩ بساز و ⁨Generate access token⁩ را بزن.",
+        "en": "Under Settings → Advanced, create an application and click Generate access token."
+      }
+    }
+  ],
+  "auth": [{ "type": "query", "name": "access_token", "field": "token" }],
+  "hosts": ["api.gumroad.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.gumroad.com/v2/sales"
+  },
+  "list": {
+    "path": "/sales",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/product_name",
+    "subtitle": "/formatted_display_price",
+    "time": "/created_at"
+  },
+  "openUrl": "https://app.gumroad.com/customers",
+  "webHosts": ["app.gumroad.com"],
+  "pollEvery": 300,
+  "notify": { "on": "new" }
+}

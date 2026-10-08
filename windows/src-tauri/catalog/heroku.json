@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "id": "heroku",
+  "name": "Heroku",
+  "category": "dev",
+  "color": "#430098",
+  "desc": {
+    "fa": "اپ‌های Heroku، آن‌هایی که تازه تغییر کرده‌اند اول.",
+    "en": "Your Heroku apps, most recently updated first."
+  },
+  "keyUrl": "https://dashboard.heroku.com/account/applications",
+  "docsUrl": "https://devcenter.heroku.com/articles/platform-api-reference",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API", "en": "API token" },
+      "placeholder": "HRKU-…",
+      "optional": false,
+      "pattern": "^(HRKU-)?[A-Za-z0-9_\\-]{30,120}$",
+      "help": {
+        "fa": "در ⁨Account → Applications⁩ یک ⁨Authorization⁩ بساز.",
+        "en": "Create an authorization under Account → Applications."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.heroku.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.heroku.com/apps",
+    "headers": { "Accept": "application/vnd.heroku+json; version=3" }
+  },
+  "list": {
+    "path": "",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/region/name",
+    "time": "/updated_at",
+    "url": "https://dashboard.heroku.com/apps/{item./name}"
+  },
+  "openUrl": "https://dashboard.heroku.com/apps",
+  "webHosts": ["dashboard.heroku.com"],
+  "pollEvery": 600
+}

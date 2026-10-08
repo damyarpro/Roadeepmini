@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "id": "trello",
+  "name": "Trello",
+  "category": "work",
+  "color": "#0079BF",
+  "desc": {
+    "fa": "کارت‌های باز Trello که عضوشان هستی؛ کارت تازه که برسد خبرت می‌کند.",
+    "en": "Open Trello cards you're a member of; tells you when a new one lands."
+  },
+  "keyUrl": "https://trello.com/power-ups/admin",
+  "docsUrl": "https://developer.atlassian.com/cloud/trello/rest/api-group-members/",
+  "fields": [
+    {
+      "name": "apiKey",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "32 hex",
+      "optional": false,
+      "pattern": "^[a-f0-9]{32}$",
+      "help": {
+        "fa": "یک Power-Up بساز؛ کلید API در صفحهٔ همان Power-Up است.",
+        "en": "Create a Power-Up; its page shows the API key."
+      }
+    },
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن", "en": "Token" },
+      "placeholder": "ATTA…",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9]{60,128}$",
+      "help": {
+        "fa": "در همان صفحه روی لینک «Token» بزن و دسترسی خواندن بده.",
+        "en": "On the same page, follow the “Token” link and allow read access."
+      }
+    }
+  ],
+  "auth": [
+    { "type": "query", "name": "key", "field": "apiKey" },
+    { "type": "query", "name": "token", "field": "token" }
+  ],
+  "hosts": ["api.trello.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.trello.com/1/members/me/cards",
+    "query": { "filter": "open", "fields": "name,shortLink,dateLastActivity" }
+  },
+  "list": {
+    "path": "",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/name",
+    "time": "/dateLastActivity",
+    "url": "https://trello.com/c/{item./shortLink}"
+  },
+  "openUrl": "https://trello.com/",
+  "webHosts": ["trello.com"],
+  "pollEvery": 180,
+  "notify": { "on": "new" }
+}

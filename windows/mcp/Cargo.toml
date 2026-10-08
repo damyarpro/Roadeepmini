@@ -1,0 +1,29 @@
+[package]
+name = "roadeep-mcp"
+description = "Local Roadeep MCP server: relays tool calls from MCP clients to Roadeep over a named pipe"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# The library half is the contract shared with the app (pipe name, wire format,
+# tool list); the binary is what Claude Code spawns over stdio.
+[lib]
+name = "roadeep_mcp"
+path = "src/lib.rs"
+
+[[bin]]
+name = "roadeep-mcp"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = { version = "1", features = ["preserve_order"] }
+
+# Our own SID for the pipe name, and who is serving the pipe.
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_Security_Authorization",
+  "Win32_System_Pipes",
+  "Win32_System_Threading",
+] }

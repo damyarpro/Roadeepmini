@@ -1,0 +1,62 @@
+[package]
+name = "roadeep"
+description = "Roadeep for Windows — a desktop companion at the top of your screen"
+authors = ["Louis Raille"]
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "roadeep_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-single-instance = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-global-shortcut = "2"
+# Auto-update from GitHub Releases; only active when the build sets
+# ROADEEP_UPDATE_URL + ROADEEP_UPDATE_PUBKEY (see updater.rs, RELEASING.md).
+tauri-plugin-updater = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+tokio = { version = "1", features = ["net", "io-util", "sync", "time", "rt", "macros", "process"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "rustls-tls"] }
+# Live chat over Roadeep's WebSocket, on the same rustls (ring) + webpki roots stack as reqwest.
+tokio-tungstenite = { version = "0.26", default-features = false, features = ["connect", "rustls-tls-webpki-roots"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+webpki-roots = "1"
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+keyring = { version = "3", features = ["windows-native"] }
+# Codex's config.toml is edited in place: comments, order and quoting survive.
+toml_edit = "0.25"
+uuid = { version = "1", features = ["v4"] }
+# SHA-256 of an approved MCP server command (mcpc/store.rs). Already in the tree.
+sha2 = "0.10"
+zip = { version = "4.6", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+# Field patterns of the catalog manifests (catalog/). Already in the tree through
+# Tauri; the default features (Unicode, perf) are what a manifest pattern expects.
+regex = "1"
+# The MCP relay's contract (pipe name, wire format, tool names) lives in one place.
+roadeep-mcp = { path = "../mcp" }
+windows = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_Security_Authorization",
+  "Win32_System_Ole",
+  "Win32_System_JobObjects",
+  "Win32_System_Pipes",
+  # The Run-key entry under the former name (migrate.rs).
+  "Win32_System_Registry",
+  "Win32_System_SystemInformation",
+  "Win32_System_Threading",
+  # Local time with the Windows zone's DST rules (planner/schedule.rs).
+  "Win32_System_Time",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_WindowsAndMessaging",
+] }
+bzip2 = "0.6"
+tar = "0.4"

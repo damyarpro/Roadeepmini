@@ -1,0 +1,347 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "github",
+      "name": "GitHub",
+      "category": "dev",
+      "desc": { "en": "Repositories, issues, pull requests and code search on GitHub.", "fa": "مخزن‌ها، ایشوها، درخواست‌های ادغام و جستجوی کد در GitHub." },
+      "docsUrl": "https://github.com/github/github-mcp-server",
+      "transport": { "type": "http", "url": "https://api.githubcopilot.com/mcp/" },
+      "auth": "bearer",
+      "authHelp": { "en": "Create a personal access token at github.com/settings/personal-access-tokens and paste it here.", "fa": "یک توکن دسترسی شخصی در github.com/settings/personal-access-tokens بسازید و اینجا بگذارید." },
+      "needs": null
+    },
+    {
+      "id": "notion",
+      "name": "Notion",
+      "category": "work",
+      "desc": { "en": "Search, read and edit pages and databases in your Notion workspace.", "fa": "جستجو، خواندن و ویرایش صفحه‌ها و پایگاه‌داده‌های فضای کاری Notion." },
+      "docsUrl": "https://developers.notion.com/docs/mcp",
+      "transport": { "type": "http", "url": "https://mcp.notion.com/mcp" },
+      "auth": "oauth",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "linear",
+      "name": "Linear",
+      "category": "work",
+      "desc": { "en": "Issues, projects and cycles in Linear.", "fa": "ایشوها، پروژه‌ها و چرخه‌های Linear." },
+      "docsUrl": "https://linear.app/docs/mcp",
+      "transport": { "type": "http", "url": "https://mcp.linear.app/mcp" },
+      "auth": "oauth",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "atlassian",
+      "name": "Atlassian (Jira, Confluence)",
+      "category": "work",
+      "desc": { "en": "Jira issues and Confluence pages.", "fa": "ایشوهای Jira و صفحه‌های Confluence." },
+      "docsUrl": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/getting-started-with-the-atlassian-remote-mcp-server/",
+      "transport": { "type": "http", "url": "https://mcp.atlassian.com/v2/mcp" },
+      "auth": "oauth",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "intercom",
+      "name": "Intercom",
+      "category": "work",
+      "desc": { "en": "Conversations, contacts and help articles in Intercom.", "fa": "گفتگوها، مخاطبان و مقاله‌های راهنمای Intercom." },
+      "docsUrl": "https://developers.intercom.com/docs/guides/mcp",
+      "transport": { "type": "http", "url": "https://mcp.intercom.com/mcp" },
+      "auth": "oauth",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "sentry",
+      "name": "Sentry",
+      "category": "dev",
+      "desc": { "en": "Errors, issues and releases from Sentry.", "fa": "خطاها، ایشوها و نسخه‌های Sentry." },
+      "docsUrl": "https://docs.sentry.io/product/sentry-mcp/",
+      "transport": { "type": "http", "url": "https://mcp.sentry.dev/mcp" },
+      "auth": "oauth",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "cloudflare-bindings",
+      "name": "Cloudflare Workers",
+      "category": "dev",
+      "desc": { "en": "Workers, KV, R2 and D1 in your Cloudflare account.", "fa": "سرویس‌های Workers، KV، R2 و D1 در حساب Cloudflare شما." },
+      "docsUrl": "https://developers.cloudflare.com/agents/model-context-protocol/mcp-servers-for-cloudflare/",
+      "transport": { "type": "http", "url": "https://bindings.mcp.cloudflare.com/mcp" },
+      "auth": "oauth",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "supabase",
+      "name": "Supabase",
+      "category": "data",
+      "desc": { "en": "Projects, tables, SQL and logs in Supabase.", "fa": "پروژه‌ها، جدول‌ها، SQL و لاگ‌های Supabase." },
+      "docsUrl": "https://supabase.com/docs/guides/getting-started/mcp",
+      "transport": { "type": "http", "url": "https://mcp.supabase.com/mcp" },
+      "auth": "oauth",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "neon",
+      "name": "Neon",
+      "category": "data",
+      "desc": { "en": "Serverless Postgres projects, branches and SQL on Neon.", "fa": "پروژه‌ها، شاخه‌ها و SQL پایگاه‌داده‌ی Postgres در Neon." },
+      "docsUrl": "https://neon.com/docs/ai/neon-mcp-server",
+      "transport": { "type": "http", "url": "https://mcp.neon.tech/mcp" },
+      "auth": "oauth",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "posthog",
+      "name": "PostHog",
+      "category": "data",
+      "desc": { "en": "Product analytics, insights, feature flags and errors in PostHog.", "fa": "تحلیل محصول، بینش‌ها، فلگ‌های ویژگی و خطاهای PostHog." },
+      "docsUrl": "https://posthog.com/docs/model-context-protocol",
+      "transport": { "type": "http", "url": "https://mcp.posthog.com/mcp" },
+      "auth": "oauth",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "huggingface",
+      "name": "Hugging Face",
+      "category": "data",
+      "desc": { "en": "Search models, datasets, Spaces and papers on Hugging Face.", "fa": "جستجوی مدل‌ها، دیتاست‌ها، Spaceها و مقاله‌ها در Hugging Face." },
+      "docsUrl": "https://huggingface.co/settings/mcp",
+      "transport": { "type": "http", "url": "https://huggingface.co/mcp" },
+      "auth": "none",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "stripe",
+      "name": "Stripe",
+      "category": "commerce",
+      "desc": { "en": "Customers, payments, invoices and products in Stripe.", "fa": "مشتری‌ها، پرداخت‌ها، صورت‌حساب‌ها و محصولات Stripe." },
+      "docsUrl": "https://docs.stripe.com/mcp",
+      "transport": { "type": "http", "url": "https://mcp.stripe.com" },
+      "auth": "bearer",
+      "authHelp": { "en": "Use a restricted API key from dashboard.stripe.com/apikeys that allows only what the assistant should do.", "fa": "یک کلید API محدود از dashboard.stripe.com/apikeys بسازید که فقط کارهای لازم را اجازه بدهد." },
+      "needs": null
+    },
+    {
+      "id": "paypal",
+      "name": "PayPal",
+      "category": "commerce",
+      "desc": { "en": "Invoices, orders, payments and disputes in PayPal.", "fa": "صورت‌حساب‌ها، سفارش‌ها، پرداخت‌ها و اختلاف‌های PayPal." },
+      "docsUrl": "https://developer.paypal.com/tools/mcp-server/",
+      "transport": { "type": "http", "url": "https://mcp.paypal.com/mcp" },
+      "auth": "oauth",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "square",
+      "name": "Square",
+      "category": "commerce",
+      "desc": { "en": "Payments, orders, catalog and customers in Square.", "fa": "پرداخت‌ها، سفارش‌ها، کاتالوگ و مشتری‌های Square." },
+      "docsUrl": "https://developer.squareup.com/docs/mcp",
+      "transport": { "type": "http", "url": "https://mcp.squareup.com/mcp" },
+      "auth": "oauth",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "canva",
+      "name": "Canva",
+      "category": "design",
+      "desc": { "en": "Search, create and edit designs in Canva.", "fa": "جستجو، ساخت و ویرایش طرح‌ها در Canva." },
+      "docsUrl": null,
+      "transport": { "type": "http", "url": "https://mcp.canva.com/mcp" },
+      "auth": "oauth",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "context7",
+      "name": "Context7",
+      "category": "docs",
+      "desc": { "en": "Up-to-date documentation and code examples for programming libraries.", "fa": "مستندات و نمونه‌کدهای به‌روز کتابخانه‌های برنامه‌نویسی." },
+      "docsUrl": "https://github.com/upstash/context7",
+      "transport": { "type": "http", "url": "https://mcp.context7.com/mcp" },
+      "auth": "none",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "deepwiki",
+      "name": "DeepWiki",
+      "category": "docs",
+      "desc": { "en": "Ask questions about public GitHub repositories.", "fa": "پرسش درباره‌ی مخزن‌های عمومی GitHub." },
+      "docsUrl": "https://docs.devin.ai/work-with-devin/deepwiki-mcp",
+      "transport": { "type": "http", "url": "https://mcp.deepwiki.com/mcp" },
+      "auth": "none",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "microsoft-learn",
+      "name": "Microsoft Learn",
+      "category": "docs",
+      "desc": { "en": "Search the official Microsoft and Azure documentation.", "fa": "جستجو در مستندات رسمی Microsoft و Azure." },
+      "docsUrl": "https://learn.microsoft.com/en-us/training/support/mcp",
+      "transport": { "type": "http", "url": "https://learn.microsoft.com/api/mcp" },
+      "auth": "none",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "cloudflare-docs",
+      "name": "Cloudflare Docs",
+      "category": "docs",
+      "desc": { "en": "Search Cloudflare's developer documentation.", "fa": "جستجو در مستندات توسعه‌دهندگان Cloudflare." },
+      "docsUrl": "https://developers.cloudflare.com/agents/model-context-protocol/mcp-servers-for-cloudflare/",
+      "transport": { "type": "http", "url": "https://docs.mcp.cloudflare.com/mcp" },
+      "auth": "none",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "exa",
+      "name": "Exa Search",
+      "category": "web",
+      "desc": { "en": "Web search and page contents through Exa.", "fa": "جستجوی وب و خواندن محتوای صفحه‌ها با Exa." },
+      "docsUrl": "https://docs.exa.ai/reference/exa-mcp",
+      "transport": { "type": "http", "url": "https://mcp.exa.ai/mcp" },
+      "auth": "none",
+      "authHelp": null,
+      "needs": null
+    },
+    {
+      "id": "filesystem",
+      "name": "Files",
+      "category": "files",
+      "desc": { "en": "Read, search and write files inside one folder you choose.", "fa": "خواندن، جستجو و نوشتن فایل‌ها فقط در پوشه‌ای که انتخاب می‌کنید." },
+      "docsUrl": "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem",
+      "transport": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-filesystem"],
+        "env": [],
+        "argFields": [
+          { "index": 2, "label": { "en": "Folder", "fa": "پوشه" }, "placeholder": "C:\\Users\\you\\Documents", "kind": "path" }
+        ]
+      },
+      "auth": "none",
+      "authHelp": null,
+      "needs": "Node.js"
+    },
+    {
+      "id": "git",
+      "name": "Git",
+      "category": "dev",
+      "desc": { "en": "History, diffs, branches and commits of a local Git repository.", "fa": "تاریخچه، تفاوت‌ها، شاخه‌ها و کامیت‌های یک مخزن Git محلی." },
+      "docsUrl": "https://github.com/modelcontextprotocol/servers/tree/main/src/git",
+      "transport": {
+        "type": "stdio",
+        "command": "uvx",
+        "args": ["mcp-server-git", "--repository"],
+        "env": [],
+        "argFields": [
+          { "index": 2, "label": { "en": "Repository folder", "fa": "پوشه‌ی مخزن" }, "placeholder": "C:\\Users\\you\\code\\project", "kind": "path" }
+        ]
+      },
+      "auth": "none",
+      "authHelp": null,
+      "needs": "uv"
+    },
+    {
+      "id": "chrome-devtools",
+      "name": "Chrome DevTools",
+      "category": "dev",
+      "desc": { "en": "Inspect and debug pages in Chrome: network, console and performance.", "fa": "بررسی و اشکال‌زدایی صفحه‌ها در Chrome: شبکه، کنسول و کارایی." },
+      "docsUrl": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
+      "transport": { "type": "stdio", "command": "npx", "args": ["-y", "chrome-devtools-mcp@latest"], "env": [] },
+      "auth": "none",
+      "authHelp": null,
+      "needs": "Node.js"
+    },
+    {
+      "id": "playwright",
+      "name": "Playwright browser",
+      "category": "web",
+      "desc": { "en": "Drive a real browser: open pages, click, fill in forms and read what is on screen.", "fa": "کنترل یک مرورگر واقعی: باز کردن صفحه، کلیک، پر کردن فرم و خواندن محتوای صفحه." },
+      "docsUrl": "https://github.com/microsoft/playwright-mcp",
+      "transport": { "type": "stdio", "command": "npx", "args": ["-y", "@playwright/mcp@latest"], "env": [] },
+      "auth": "none",
+      "authHelp": null,
+      "needs": "Node.js"
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch",
+      "category": "web",
+      "desc": { "en": "Fetch a web page and turn it into readable text.", "fa": "دریافت یک صفحه‌ی وب و تبدیل آن به متن خوانا." },
+      "docsUrl": "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch",
+      "transport": { "type": "stdio", "command": "uvx", "args": ["mcp-server-fetch"], "env": [] },
+      "auth": "none",
+      "authHelp": null,
+      "needs": "uv"
+    },
+    {
+      "id": "brave-search",
+      "name": "Brave Search",
+      "category": "web",
+      "desc": { "en": "Web, news and image search through the Brave Search API.", "fa": "جستجوی وب، خبر و تصویر با API جستجوی Brave." },
+      "docsUrl": "https://github.com/brave/brave-search-mcp-server",
+      "transport": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@brave/brave-search-mcp-server", "--transport", "stdio"],
+        "env": [
+          { "name": "BRAVE_API_KEY", "label": { "en": "Brave Search API key", "fa": "کلید API جستجوی Brave" }, "secret": true, "placeholder": "BSA…" }
+        ]
+      },
+      "auth": "none",
+      "authHelp": { "en": "Get an API key at brave.com/search/api.", "fa": "کلید API را از brave.com/search/api بگیرید." },
+      "needs": "Node.js"
+    },
+    {
+      "id": "memory",
+      "name": "Knowledge graph",
+      "category": "other",
+      "desc": { "en": "A local knowledge graph of people, projects and facts the assistant can add to and look up.", "fa": "گراف دانش محلی از آدم‌ها، پروژه‌ها و نکته‌ها که دستیار می‌تواند به آن اضافه کند و در آن بگردد." },
+      "docsUrl": "https://github.com/modelcontextprotocol/servers/tree/main/src/memory",
+      "transport": { "type": "stdio", "command": "npx", "args": ["-y", "@modelcontextprotocol/server-memory"], "env": [] },
+      "auth": "none",
+      "authHelp": null,
+      "needs": "Node.js"
+    },
+    {
+      "id": "sequential-thinking",
+      "name": "Sequential thinking",
+      "category": "other",
+      "desc": { "en": "Step-by-step reasoning for complex problems.", "fa": "استدلال گام‌به‌گام برای مسئله‌های پیچیده." },
+      "docsUrl": "https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking",
+      "transport": { "type": "stdio", "command": "npx", "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"], "env": [] },
+      "auth": "none",
+      "authHelp": null,
+      "needs": "Node.js"
+    },
+    {
+      "id": "time",
+      "name": "Time",
+      "category": "other",
+      "desc": { "en": "Current time and time-zone conversions.", "fa": "زمان کنونی و تبدیل منطقه‌های زمانی." },
+      "docsUrl": "https://github.com/modelcontextprotocol/servers/tree/main/src/time",
+      "transport": { "type": "stdio", "command": "uvx", "args": ["mcp-server-time"], "env": [] },
+      "auth": "none",
+      "authHelp": null,
+      "needs": "uv"
+    }
+  ]
+}

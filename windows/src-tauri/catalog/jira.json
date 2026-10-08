@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "id": "jira",
+  "name": "Jira",
+  "category": "work",
+  "color": "#0052CC",
+  "desc": {
+    "fa": "کارهای باز Jira که به تو سپرده شده، تازه‌ترین‌ها اول.",
+    "en": "Open Jira issues assigned to you, most recently updated first."
+  },
+  "keyUrl": "https://id.atlassian.com/manage-profile/security/api-tokens",
+  "docsUrl": "https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/",
+  "fields": [
+    {
+      "name": "site",
+      "kind": "text",
+      "label": { "fa": "نام سایت", "en": "Site name" },
+      "placeholder": "your-team",
+      "optional": false,
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "help": {
+        "fa": "بخش اول آدرس Jira، پیش از ⁨.atlassian.net⁩",
+        "en": "The first part of your Jira address, before .atlassian.net"
+      }
+    },
+    {
+      "name": "email",
+      "kind": "text",
+      "label": { "fa": "ایمیل حساب Atlassian", "en": "Atlassian account email" },
+      "placeholder": "you@company.com",
+      "optional": false,
+      "pattern": "^[^@\\s/:]{1,64}@[^@\\s/:]{1,255}$"
+    },
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API", "en": "API token" },
+      "placeholder": "ATATT…",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9_=\\-]{20,400}$"
+    }
+  ],
+  "auth": [{ "type": "basic", "user": "email", "pass": "token" }],
+  "hosts": ["*.atlassian.net"],
+  "request": {
+    "method": "GET",
+    "url": "https://{field.site}.atlassian.net/rest/api/3/search/jql",
+    "headers": { "Accept": "application/json" },
+    "query": {
+      "jql": "assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC",
+      "fields": "summary,status,updated",
+      "maxResults": "10"
+    }
+  },
+  "list": {
+    "path": "/issues",
+    "max": 10,
+    "id": "/id",
+    "title": "/fields/summary",
+    "subtitle": "/key",
+    "status": "/fields/status/name",
+    "time": "/fields/updated",
+    "url": "https://{field.site}.atlassian.net/browse/{item./key}"
+  },
+  "statusMap": { "*": "info" },
+  "openUrl": "https://{field.site}.atlassian.net/jira/your-work",
+  "webHosts": ["*.atlassian.net"],
+  "pollEvery": 180,
+  "notify": { "on": "new" }
+}

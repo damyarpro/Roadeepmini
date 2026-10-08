@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "id": "twilio",
+  "name": "Twilio",
+  "category": "comms",
+  "color": "#F22F46",
+  "desc": {
+    "fa": "آخرین پیامک‌های Twilio؛ اگر پیامی نرسد خبرت می‌کند.",
+    "en": "Your latest Twilio messages; tells you when one fails to deliver."
+  },
+  "keyUrl": "https://console.twilio.com/",
+  "docsUrl": "https://www.twilio.com/docs/messaging/api/message-resource",
+  "fields": [
+    {
+      "name": "accountSid",
+      "kind": "text",
+      "label": { "fa": "Account SID", "en": "Account SID" },
+      "placeholder": "AC…",
+      "optional": false,
+      "pattern": "^AC[a-f0-9]{32}$"
+    },
+    {
+      "name": "authToken",
+      "kind": "secret",
+      "label": { "fa": "Auth token", "en": "Auth token" },
+      "placeholder": "32 hex",
+      "optional": false,
+      "pattern": "^[a-f0-9]{32}$",
+      "help": {
+        "fa": "هر دو در صفحهٔ اول کنسول Twilio، بخش ⁨Account Info⁩ هستند.",
+        "en": "Both are on the Twilio Console home page, under Account Info."
+      }
+    }
+  ],
+  "auth": [{ "type": "basic", "user": "accountSid", "pass": "authToken" }],
+  "hosts": ["api.twilio.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.twilio.com/2010-04-01/Accounts/{field.accountSid}/Messages.json",
+    "query": { "PageSize": "10" }
+  },
+  "list": {
+    "path": "/messages",
+    "max": 10,
+    "id": "/sid",
+    "title": "/to",
+    "subtitle": "/body",
+    "status": "/status"
+  },
+  "statusMap": {
+    "delivered": "ok",
+    "sent": "ok",
+    "received": "ok",
+    "read": "ok",
+    "queued": "info",
+    "sending": "info",
+    "accepted": "info",
+    "scheduled": "info",
+    "receiving": "info",
+    "undelivered": "warn",
+    "failed": "err",
+    "canceled": "off",
+    "*": "info"
+  },
+  "openUrl": "https://console.twilio.com/",
+  "webHosts": ["console.twilio.com"],
+  "pollEvery": 300,
+  "notify": { "on": "new", "statuses": ["err", "warn"] }
+}

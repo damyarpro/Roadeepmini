@@ -1,0 +1,142 @@
+/* Settings → MCP → Apps: one row per coding app the Roadeep MCP server can be
+   added to. Built only from the tokens in settings.css. */
+
+.mcp-apps {
+  gap: var(--sp-3);
+}
+
+.mcp-client-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+/* [name · status / config path] … [actions] */
+.mcp-client {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  min-height: 56px;
+  padding: var(--sp-3) 0;
+}
+
+.mcp-client + .mcp-client {
+  border-top: 1px solid var(--divider);
+}
+
+.mcp-client-text {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.mcp-client-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.mcp-client-name {
+  font: 600 var(--fs-body) / 1.5 var(--font);
+  color: var(--text);
+}
+
+/* Machine text: one line, cut at the end, the full path in the tooltip. */
+.mcp-client-path {
+  font: 400 var(--fs-small) / 1.5 var(--mono);
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: text;
+}
+
+:root[dir="rtl"] .mcp-client-path {
+  text-align: right;
+}
+
+.mcp-client-actions {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* "Other apps": a quiet disclosure under the detected ones. */
+.mcp-others {
+  border-top: 1px solid var(--divider);
+  padding-top: var(--sp-2);
+}
+
+.mcp-others > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 40px;
+  margin-inline-start: calc(var(--sp-2) * -1);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius);
+  color: var(--text-2);
+  font: 600 var(--fs-body) / 1.5 var(--font);
+  list-style: none;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.mcp-others > summary::-webkit-details-marker {
+  display: none;
+}
+
+.mcp-others > summary:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.mcp-others > summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.mcp-others > summary .chev {
+  display: inline-flex;
+  transition: transform var(--t-fast) var(--ease);
+}
+
+.mcp-others[open] > summary .chev {
+  transform: rotate(180deg);
+}
+
+.mcp-others > .hint {
+  margin: var(--sp-1) 0 var(--sp-2);
+}
+
+.mcp-apps h3:focus {
+  outline: none;
+}
+
+.mcp-manual {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.mcp-manual .diff {
+  color: var(--text-2);
+}
+
+.mcp-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mcp-others > summary .chev {
+    transition: none;
+  }
+}

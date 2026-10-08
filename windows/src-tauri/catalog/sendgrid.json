@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "id": "sendgrid",
+  "name": "SendGrid",
+  "category": "comms",
+  "color": "#1A82E2",
+  "desc": {
+    "fa": "نشانی‌هایی که ایمیل SendGrid به آن‌ها برگشت خورده.",
+    "en": "Addresses your SendGrid email bounced from."
+  },
+  "keyUrl": "https://app.sendgrid.com/settings/api_keys",
+  "docsUrl": "https://www.twilio.com/docs/sendgrid/api-reference",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "SG.…",
+      "optional": false,
+      "pattern": "^SG\\.[A-Za-z0-9_\\-]{16,32}\\.[A-Za-z0-9_\\-]{30,64}$",
+      "help": {
+        "fa": "یک کلید با دسترسی محدود و فقط خواندن ⁨Suppressions⁩ بساز.",
+        "en": "Create a restricted key with read access to Suppressions only."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.sendgrid.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.sendgrid.com/v3/suppression/bounces",
+    "headers": { "Accept": "application/json" },
+    "query": { "limit": "20" }
+  },
+  "list": {
+    "path": "",
+    "max": 10,
+    "sort": "time",
+    "id": "/email",
+    "title": "/email",
+    "subtitle": "/reason",
+    "time": "/created"
+  },
+  "openUrl": "https://app.sendgrid.com/",
+  "webHosts": ["app.sendgrid.com"],
+  "pollEvery": 600,
+  "notify": { "on": "new" }
+}

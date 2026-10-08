@@ -1,0 +1,13 @@
+/* Settings → Planner. Everything else comes from settings.css (rows, cards, segmented). */
+
+/* Notes that only sometimes have words (out of range, sound off) stay in the
+   accessibility tree so the live ones announce, but take no room while empty. */
+.pl-note:empty {
+  height: 0;
+  margin-block-start: calc(var(--sp-1) * -1);
+}
+
+/* "minutes" and "rounds" differ in width; a shared width keeps the fields in one column. */
+.pl-unit {
+  min-inline-size: 3.5em;
+}

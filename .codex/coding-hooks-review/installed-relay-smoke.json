@@ -1,0 +1,20 @@
+{
+  "version": "0.1.5",
+  "installedAppReceived": true,
+  "syntheticOnly": true,
+  "permissionDecisionTested": false,
+  "events": [
+    {
+      "event": "SessionStart",
+      "exitCode": 0,
+      "stdoutEmpty": true,
+      "elapsedMs": 104
+    },
+    {
+      "event": "SessionEnd",
+      "exitCode": 0,
+      "stdoutEmpty": true,
+      "elapsedMs": 25
+    }
+  ]
+}

@@ -1,0 +1,498 @@
+/* Settings → MCP servers (mcp-servers.ts) and its "Add a server" dialog
+   (mcp-servers-add.ts). Built only from the tokens in settings.css; the row,
+   key-field, test and dialog shells reuse the integrations and market rules. */
+
+.mcpc {
+  gap: var(--sp-3);
+}
+
+.mcpc-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.mcpc-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-2) 0;
+}
+
+.mcpc-item + .mcpc-item {
+  border-top: 1px solid var(--divider);
+}
+
+/* [disclosure: mark · name · status / where · chevron] … [switch] */
+.mcpc-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+}
+
+button.mcpc-id {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--sp-3);
+  margin-inline-start: calc(var(--sp-2) * -1);
+  padding: var(--sp-1) var(--sp-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  text-align: start;
+}
+
+button.mcpc-id:hover:not(:disabled) {
+  border: 0;
+  background: var(--surface-hover);
+}
+
+/* The server's initial: no brand colours or logos to keep in step. */
+.mcpc-mark {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-sm);
+  background: var(--surface-4);
+  color: var(--text-2);
+  font: 600 var(--fs-body) / 1 var(--font);
+}
+
+.mcpc-titles {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mcpc-name-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-2);
+  min-width: 0;
+}
+
+.mcpc-name {
+  min-width: 0;
+  font: 600 var(--fs-body) / 1.5 var(--font);
+  overflow-wrap: anywhere;
+}
+
+.mcpc-sub {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 0;
+  font-size: var(--fs-small);
+  color: var(--text-3);
+}
+
+/* Machine text: one line, cut at the end; the full text is in the tooltip. */
+.mcpc-where {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 var(--fs-small) / 1.5 var(--mono);
+}
+
+.mcpc-count {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.mcpc-count:empty {
+  display: none;
+}
+
+.mcpc-count::before {
+  content: "·";
+  margin-inline-end: var(--sp-2);
+}
+
+.mcpc-id .chev {
+  flex: 0 0 auto;
+  display: inline-flex;
+  color: var(--text-2);
+  transition: transform var(--t-fast) var(--ease);
+}
+
+.mcpc-id[aria-expanded="true"] .chev {
+  transform: rotate(180deg);
+}
+
+/* Set apart from the chevron so the two don't read as one control. */
+.mcpc-ctrls {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  margin-inline-start: var(--sp-2);
+  padding-inline-start: var(--sp-4);
+  border-inline-start: 1px solid var(--divider);
+  min-height: 32px;
+}
+
+/* A switch or mode that couldn't be saved says so where it happened. */
+.mcpc-row-err:empty,
+.mcpc-tool-err:empty,
+.mcpc-card-err:empty {
+  display: none;
+}
+
+.mcpc-tool-err {
+  flex: 1 1 100%;
+}
+
+/* A switch-on waiting for a value: the same warn colour as that field's badge and border. */
+.mcpc-row-err.warn {
+  color: var(--warning);
+}
+
+.mcpc-row-err {
+  margin-block: var(--sp-1) var(--sp-2);
+}
+
+.mcpc-keys input[aria-invalid="true"] {
+  border-color: var(--warning);
+}
+
+.mcpc-var {
+  font-size: var(--fs-small);
+  color: var(--text-3);
+}
+
+/* Server text (English descriptions, errors) in a Persian panel keeps the
+   panel's alignment, so a column doesn't read ragged. Physical sides:
+   match-parent resolves against the element's own dir="auto" inside the
+   line-clamp box. */
+:root[dir="rtl"] :is(.mcpc-list, .mcpc-dlg) [dir="auto"] {
+  text-align: right;
+}
+
+:root[dir="ltr"] :is(.mcpc-list, .mcpc-dlg) [dir="auto"] {
+  text-align: left;
+}
+
+/* A sub-block's title in the panel, like a key field's label. */
+.mcpc-label {
+  font-size: var(--fs-hint);
+  color: var(--text-2);
+}
+
+.mcpc-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-2);
+}
+
+.mcpc-panel > .notice {
+  margin: 0;
+}
+
+/* A server's error can carry its own last stderr lines. */
+.mcpc-error {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 168px;
+  overflow-y: auto;
+}
+
+/* ── Local command ── */
+
+.mcpc-cmd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.mcpc-cmd-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.mcpc-cmd-state:empty {
+  display: none;
+}
+
+/* Exactly what runs: wraps rather than scrolls, so nothing is out of sight. */
+.mcpc-code {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font: 400 var(--fs-small) / 1.6 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-align: left;
+  user-select: text;
+}
+
+.mcpc-approve {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--warning-24);
+  border-radius: var(--radius);
+  background: var(--warning-12);
+  font-size: var(--fs-hint);
+  color: var(--text);
+}
+
+.mcpc-approve .actions {
+  margin: 0;
+}
+
+/* ── Keys and sign-in ── */
+
+.mcpc-keys,
+.mcpc-auth {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.mcpc-auth-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  min-height: 32px;
+}
+
+.mcpc-auth-action {
+  display: inline-flex;
+}
+
+.mcpc-panel .int-test-err:empty {
+  display: none;
+}
+
+/* ── Tools ── */
+
+.mcpc-tools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--divider);
+}
+
+.mcpc-tools-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.mcpc-tools-head h4 {
+  margin: 0;
+}
+
+.mcpc-tool-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.mcpc-tool {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  padding: var(--sp-2) 0;
+}
+
+.mcpc-tool:not([hidden]) ~ .mcpc-tool:not([hidden]) {
+  border-top: 1px solid var(--divider);
+}
+
+.mcpc-tool-text {
+  flex: 1 1 240px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mcpc-tool-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-2);
+}
+
+.mcpc-tool-name {
+  font: 500 var(--fs-hint) / 1.5 var(--mono);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.mcpc-tool-title {
+  font-size: var(--fs-small);
+  color: var(--text-2);
+}
+
+.mcpc-tool-desc {
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--text-2);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.mcpc-flag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-full);
+  color: var(--text-2);
+  font: 500 var(--fs-small) / 1.5 var(--font);
+  white-space: nowrap;
+}
+
+.mcpc-flag.warn {
+  border-color: var(--warning-24);
+  background: var(--warning-12);
+  color: var(--warning);
+}
+
+.segmented.mcpc-modes {
+  flex: 0 0 216px;
+}
+
+
+@container (max-width: 520px) {
+  .segmented.mcpc-modes {
+    flex-basis: 100%;
+  }
+}
+
+/* ── Empty state ── */
+
+.mcpc-empty-art {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  background: var(--surface-4);
+  color: var(--text-2);
+}
+
+/* ── Dialog ── */
+
+.mcpc-dlg-searchrow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.mcpc-dlg-searchrow > .mk-search {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.mcpc-custom-btn {
+  flex: 0 0 auto;
+}
+
+.mcpc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.mcpc-tags .chip {
+  min-height: 20px;
+}
+
+.mcpc-card-foot {
+  gap: var(--sp-2);
+}
+
+/* LTR: points back (left); RTL: back is to the right. */
+button.mcpc-back .icon {
+  transform: rotate(90deg);
+}
+
+:root[dir="rtl"] button.mcpc-back .icon {
+  transform: rotate(-90deg);
+}
+
+.mcpc-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.mcpc-form .field-label {
+  font: 500 var(--fs-body) / 1.5 var(--font);
+  color: var(--text);
+}
+
+.mcpc-form textarea {
+  font-family: var(--mono);
+  font-size: var(--fs-hint);
+  min-height: 72px;
+}
+
+.mcpc-form :is(input, textarea)[dir="ltr"] {
+  text-align: left;
+}
+
+.segmented.mcpc-seg2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* A form needs only its own height; the directory keeps the tall dialog. */
+.mk.mcpc-dlg.is-form {
+  height: auto;
+  max-height: calc(100vh - max(16px, 5vh) - 16px);
+}
+
+.mcpc-dlg-foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-top: 1px solid var(--divider);
+}
+
+.mcpc-dlg-foot .actions {
+  margin: 0;
+}
+
+@media (max-width: 520px) {
+  .mcpc-dlg-searchrow {
+    flex-wrap: wrap;
+  }
+
+  .mcpc-custom-btn {
+    flex: 1 1 100%;
+  }
+}
+
+/* The shared input rule outranks settings.css's [aria-invalid]; a field in error must still show it. */
+.mcpc-form :is(input, textarea, select)[aria-invalid="true"] {
+  border-color: var(--error);
+}

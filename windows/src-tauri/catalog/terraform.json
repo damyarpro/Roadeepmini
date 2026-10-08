@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "id": "terraform",
+  "name": "HCP Terraform",
+  "category": "dev",
+  "color": "#7B42BC",
+  "desc": {
+    "fa": "ورک‌اسپیس‌های HCP Terraform، آن‌هایی که تازه تغییر کرده‌اند اول.",
+    "en": "Your HCP Terraform workspaces, most recently changed first."
+  },
+  "keyUrl": "https://app.terraform.io/app/settings/tokens",
+  "docsUrl": "https://developer.hashicorp.com/terraform/cloud-docs/api-docs/workspaces",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API", "en": "API token" },
+      "placeholder": "xxxxxxxxxxxxxx.atlasv1.…",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9]{14}\\.atlasv1\\.[A-Za-z0-9_\\-]{40,120}$"
+    },
+    {
+      "name": "org",
+      "kind": "text",
+      "label": { "fa": "نام سازمان", "en": "Organization name" },
+      "placeholder": "my-org",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9_\\-]{1,60}$"
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["app.terraform.io"],
+  "request": {
+    "method": "GET",
+    "url": "https://app.terraform.io/api/v2/organizations/{field.org}/workspaces",
+    "headers": { "Accept": "application/vnd.api+json" },
+    "query": { "page[size]": "20" }
+  },
+  "list": {
+    "path": "/data",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/attributes/name",
+    "subtitle": "/attributes/terraform-version",
+    "time": "/attributes/updated-at",
+    "url": "https://app.terraform.io/app/{field.org}/workspaces/{item./attributes/name}"
+  },
+  "count": "/meta/pagination/total-count",
+  "openUrl": "https://app.terraform.io/app/{field.org}/workspaces",
+  "webHosts": ["app.terraform.io"],
+  "pollEvery": 600
+}

@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "id": "devto",
+  "name": "DEV Community",
+  "category": "content",
+  "color": "#3B49DF",
+  "desc": {
+    "fa": "نوشته‌هایت در DEV و واکنش‌هایی که گرفته‌اند.",
+    "en": "Your DEV articles and the reactions they've received."
+  },
+  "keyUrl": "https://dev.to/settings/extensions",
+  "docsUrl": "https://developers.forem.com/api/v1",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "24 characters",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9]{20,40}$",
+      "help": {
+        "fa": "در ⁨Settings → Extensions⁩، بخش ⁨DEV Community API Keys⁩",
+        "en": "Settings → Extensions, under DEV Community API Keys."
+      }
+    }
+  ],
+  "auth": [{ "type": "header", "name": "api-key", "field": "token", "prefix": "" }],
+  "hosts": ["dev.to"],
+  "request": {
+    "method": "GET",
+    "url": "https://dev.to/api/articles/me/all",
+    "headers": { "Accept": "application/vnd.forem.api-v1+json" },
+    "query": { "per_page": "10" }
+  },
+  "list": {
+    "path": "",
+    "max": 10,
+    "id": "/id",
+    "title": "/title",
+    "subtitle": "/public_reactions_count",
+    "time": "/published_at",
+    "url": "{item./url|url}"
+  },
+  "openUrl": "https://dev.to/dashboard",
+  "webHosts": ["dev.to"],
+  "pollEvery": 1800
+}

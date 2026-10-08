@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "id": "pagerduty",
+  "name": "PagerDuty",
+  "category": "monitoring",
+  "color": "#06AC38",
+  "desc": {
+    "fa": "حادثه‌های اخیر PagerDuty؛ حادثهٔ تازه که فعال شود خبرت می‌کند.",
+    "en": "Recent PagerDuty incidents; tells you when a new one is triggered."
+  },
+  "keyUrl": "https://support.pagerduty.com/main/docs/api-access-keys",
+  "docsUrl": "https://developer.pagerduty.com/api-reference/",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API", "en": "API token" },
+      "placeholder": "u+…",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9_+\\-]{16,64}$",
+      "help": {
+        "fa": "یک توکن کاربری یا یک کلید «فقط خواندن» از ⁨Integrations → API Access Keys⁩",
+        "en": "A user token, or a read-only key from Integrations → API Access Keys."
+      }
+    }
+  ],
+  "auth": [{ "type": "header", "name": "Authorization", "field": "token", "prefix": "Token token=" }],
+  "hosts": ["api.pagerduty.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.pagerduty.com/incidents",
+    "headers": { "Accept": "application/vnd.pagerduty+json;version=2" },
+    "query": { "sort_by": "created_at:desc", "limit": "20" }
+  },
+  "list": {
+    "path": "/incidents",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/title",
+    "subtitle": "/service/summary",
+    "status": "/status",
+    "time": "/created_at",
+    "url": "{item./html_url|url}"
+  },
+  "statusMap": { "triggered": "err", "acknowledged": "warn", "resolved": "ok" },
+  "webHosts": ["*.pagerduty.com"],
+  "pollEvery": 60,
+  "notify": { "on": "new", "statuses": ["err"] }
+}

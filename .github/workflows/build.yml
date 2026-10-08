@@ -1,0 +1,44 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project
+        run: cd NotchBuddy && xcodegen
+
+      - name: Test screen geometry
+        run: bash scripts/test-screen-geometry.sh
+
+      - name: Test link filter
+        run: bash scripts/test-safe-links.sh
+
+      - name: Test auto-close timing
+        run: bash scripts/test-auto-close.sh
+
+      - name: Test Claude response text
+        run: bash scripts/test-claude-response.sh
+
+      - name: Claude settings file tests
+        run: bash scripts/test-claude-settings.sh
+
+      - name: Build
+        run: |
+          xcodebuild \
+            -project NotchBuddy/NotchBuddy.xcodeproj \
+            -scheme NotchBuddy \
+            -configuration Release \
+            build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO

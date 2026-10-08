@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "id": "clerk",
+  "name": "Clerk",
+  "category": "dev",
+  "color": "#6C47FF",
+  "desc": {
+    "fa": "کاربرانی که تازه در اپت ثبت‌نام کرده‌اند؛ هر ثبت‌نام تازه را خبر می‌دهد.",
+    "en": "The newest sign-ups in your app; tells you about each new user."
+  },
+  "keyUrl": "https://dashboard.clerk.com/",
+  "docsUrl": "https://clerk.com/docs/reference/backend-api",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "کلید محرمانه", "en": "Secret key" },
+      "placeholder": "sk_live_…",
+      "optional": false,
+      "pattern": "^sk_(live|test)_[A-Za-z0-9]{20,100}$",
+      "help": {
+        "fa": "در داشبورد اپ: ⁨Configure → API keys⁩",
+        "en": "In your app's dashboard: Configure → API keys."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.clerk.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.clerk.com/v1/users",
+    "query": { "limit": "10", "order_by": "-created_at" }
+  },
+  "list": {
+    "path": "",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/email_addresses/0/email_address",
+    "subtitle": "/first_name",
+    "time": "/created_at"
+  },
+  "openUrl": "https://dashboard.clerk.com/",
+  "webHosts": ["dashboard.clerk.com"],
+  "pollEvery": 300,
+  "notify": { "on": "new" }
+}

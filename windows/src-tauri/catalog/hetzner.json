@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "id": "hetzner",
+  "name": "Hetzner Cloud",
+  "category": "dev",
+  "color": "#D50C2D",
+  "desc": {
+    "fa": "سرورهای یک پروژهٔ Hetzner Cloud و وضعیتشان.",
+    "en": "The servers in a Hetzner Cloud project and their state."
+  },
+  "keyUrl": "https://console.hetzner.cloud/projects",
+  "docsUrl": "https://docs.hetzner.cloud/",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API پروژه", "en": "Project API token" },
+      "placeholder": "64 characters",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9]{64}$",
+      "help": {
+        "fa": "در پروژه: ⁨Security → API tokens⁩؛ دسترسی ⁨Read⁩ کافی است.",
+        "en": "In the project: Security → API tokens; Read permission is enough."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.hetzner.cloud"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.hetzner.cloud/v1/servers",
+    "query": { "per_page": "25" }
+  },
+  "list": {
+    "path": "/servers",
+    "max": 20,
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/server_type/name",
+    "status": "/status",
+    "time": "/created"
+  },
+  "statusMap": {
+    "running": "ok",
+    "initializing": "info",
+    "starting": "info",
+    "migrating": "info",
+    "rebuilding": "info",
+    "stopping": "warn",
+    "unknown": "warn",
+    "off": "off",
+    "deleting": "off",
+    "*": "info"
+  },
+  "count": "/meta/pagination/total_entries",
+  "openUrl": "https://console.hetzner.cloud/projects",
+  "webHosts": ["console.hetzner.cloud"],
+  "pollEvery": 300
+}

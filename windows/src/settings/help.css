@@ -1,0 +1,11 @@
+.settings-help{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px;max-width:100%;vertical-align:middle}
+.settings-help-button{display:inline-grid;place-items:center;flex:none;width:44px;height:44px;padding:0;border:1px solid transparent;border-radius:var(--radius-sm);background:transparent;color:var(--text-2);cursor:pointer}
+.settings-help-button:hover,.settings-help-button[aria-expanded="true"]{color:var(--primary);background:var(--surface-hover)}
+.settings-help-button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.settings-help-content{flex-basis:100%;display:block;padding:8px 12px;border:1px solid var(--divider);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--text-2);font-size:12px;font-weight:400;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.settings-help-content[hidden]{display:none}
+.sec-title-line,.set-label-line{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.sec-title-line h2{margin:0}.set-label-line .settings-help{flex:0 1 auto}
+.sec-titles .settings-help-content{max-width:100%}
+
+.settings-help.is-open{flex-basis:100%;width:100%}

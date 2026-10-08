@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "id": "koyeb",
+  "name": "Koyeb",
+  "category": "dev",
+  "color": "#6A4CFF",
+  "desc": {
+    "fa": "سرویس‌های Koyeb و سلامتشان؛ اگر یکی ناسالم شود خبرت می‌کند.",
+    "en": "Your Koyeb services and their health; tells you when one turns unhealthy."
+  },
+  "keyUrl": "https://www.koyeb.com/docs/reference/api",
+  "docsUrl": "https://www.koyeb.com/docs/reference/api",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API", "en": "API token" },
+      "placeholder": "API access token",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9]{40,100}$",
+      "help": {
+        "fa": "در کنسول: ⁨Organization settings → API⁩",
+        "en": "In the console: Organization settings → API."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["app.koyeb.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://app.koyeb.com/v1/services",
+    "query": { "limit": "20" }
+  },
+  "list": {
+    "path": "/services",
+    "max": 20,
+    "id": "/id",
+    "title": "/name",
+    "status": "/status",
+    "time": "/updated_at"
+  },
+  "statusMap": {
+    "HEALTHY": "ok",
+    "STARTING": "info",
+    "RESUMING": "info",
+    "DEGRADED": "warn",
+    "UNHEALTHY": "err",
+    "PAUSING": "off",
+    "PAUSED": "off",
+    "DELETING": "off",
+    "DELETED": "off",
+    "*": "info"
+  },
+  "count": "/count",
+  "openUrl": "https://app.koyeb.com/",
+  "webHosts": ["app.koyeb.com"],
+  "pollEvery": 120,
+  "notify": { "on": "status", "statuses": ["err", "warn"] }
+}

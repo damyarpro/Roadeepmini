@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "id": "vultr",
+  "name": "Vultr",
+  "category": "dev",
+  "color": "#007BFC",
+  "desc": {
+    "fa": "سرورهای Vultr و این‌که روشن‌اند یا خاموش.",
+    "en": "Your Vultr instances and whether they're running."
+  },
+  "keyUrl": "https://my.vultr.com/settings/",
+  "docsUrl": "https://www.vultr.com/api/",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "36 characters",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9]{30,64}$",
+      "help": {
+        "fa": "در ⁨Account → API⁩ فعالش کن؛ اگر محدودیت IP روشن است، IP این رایانه را اضافه کن.",
+        "en": "Enable it under Account → API; if access control is on, allow this computer's IP."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.vultr.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.vultr.com/v2/instances",
+    "query": { "per_page": "25" }
+  },
+  "list": {
+    "path": "/instances",
+    "max": 20,
+    "id": "/id",
+    "title": "/label",
+    "subtitle": "/region",
+    "status": "/power_status",
+    "time": "/date_created"
+  },
+  "statusMap": { "running": "ok", "stopped": "off", "*": "info" },
+  "count": "/meta/total",
+  "openUrl": "https://my.vultr.com/",
+  "webHosts": ["my.vultr.com"],
+  "pollEvery": 300
+}

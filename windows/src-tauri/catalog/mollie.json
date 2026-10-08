@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "id": "mollie",
+  "name": "Mollie",
+  "category": "payments",
+  "color": "#0077FF",
+  "desc": {
+    "fa": "پرداخت‌های تازهٔ Mollie؛ پرداختی که موفق شود خبرت می‌کند.",
+    "en": "Latest Mollie payments; tells you when one is paid."
+  },
+  "keyUrl": "https://my.mollie.com/dashboard/developers/api-keys",
+  "docsUrl": "https://docs.mollie.com/reference/list-payments",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "live_…",
+      "optional": false,
+      "pattern": "^(live|test)_[A-Za-z0-9]{30}$"
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.mollie.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.mollie.com/v2/payments",
+    "query": { "limit": "10" }
+  },
+  "list": {
+    "path": "/_embedded/payments",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/description",
+    "subtitle": "/amount/value",
+    "status": "/status",
+    "time": "/createdAt",
+    "url": "{item./_links/dashboard/href|url}"
+  },
+  "statusMap": {
+    "paid": "ok",
+    "open": "info",
+    "pending": "info",
+    "authorized": "info",
+    "canceled": "off",
+    "expired": "off",
+    "failed": "err",
+    "*": "info"
+  },
+  "openUrl": "https://my.mollie.com/dashboard",
+  "webHosts": ["my.mollie.com"],
+  "pollEvery": 120,
+  "notify": { "on": "status", "statuses": ["ok"] }
+}

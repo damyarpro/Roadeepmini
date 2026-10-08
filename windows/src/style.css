@@ -1,0 +1,3435 @@
+/* Roadeep for Windows — same palette, sizes and type scale as the macOS island.
+   Every colour below is copied from the Swift views. */
+
+@import "./assets/fonts/vazirmatn.css";
+
+:root {
+  color-scheme: dark;
+
+  /* English keeps the Segoe stack; "Vazirmatn Persian" only covers Arabic
+     script, so Persian text in an English UI still gets Vazirmatn. Canvases read
+     this variable too (canvasFontFamily). */
+  --font: "Vazirmatn Persian", system-ui, "Segoe UI Variable Text", "Segoe UI", "Segoe UI Emoji",
+    sans-serif;
+  --mono: "Cascadia Mono", "Consolas", ui-monospace, "Vazirmatn", monospace;
+
+  --ink: #f5f6f8;        /* primary text */
+  --ink-2: #f1f2f4;
+  --dim: #9398a1;
+  --dim-2: #8e939c;
+  --dim-3: #6b7079;
+  --dim-4: #5f646d;
+  --dim-5: #4b5563;
+  --card: #141518;
+  --card-flat: #0e0f11;
+  --tab-on: #1d1f23;
+  --hairline: rgba(255, 255, 255, 0.035);
+  --red: #f4505e;
+  --red-text: #ff8d97;
+  --green: #22c55e;
+  --green-2: #34d399;
+  --amber: #f5a524;
+  --cyan: #22d3ee;
+  --indigo: #6366f1;
+  --pink: #f472b6;
+
+  /* One height for every pill in an island card's top row and input bar. */
+  --isl-pill-h: 26px;
+}
+
+:root[lang="fa"] {
+  --font: "Vazirmatn", system-ui, "Segoe UI Variable Text", "Segoe UI", "Segoe UI Emoji", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: var(--font);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  cursor: default;
+}
+
+#root {
+  position: fixed;
+  inset: 0;
+}
+
+/* Strip that wakes the island when it is hidden and carries its line: along
+   its dock edge, or the whole window once that has shrunk to the strip
+   (island.ts). */
+#wake-strip {
+  position: absolute;
+  background: transparent;
+}
+
+/* The hidden island: the compact island flattened to a 5 px line against its
+   edge, as long as the island and with the same concave shoulders at both
+   ends (::after), plus a faint light hairline so it shows on dark and light
+   screens alike. Static — nothing animates or polls while it is up; it fades
+   in once the island has retracted into it and vanishes at once when the
+   island comes back. Hovering it wakes the island (island.ts). */
+#wake-strip::before,
+#wake-strip::after {
+  content: "";
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  --line: 5px;
+  --line-long: 288px;
+  --cut: transparent calc(var(--line) - 0.5px), #000 var(--line);
+}
+
+#wake-strip::before {
+  background: #000;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+#wake-strip.line::before,
+#wake-strip.line::after {
+  opacity: 1;
+  transition: opacity 0.2s ease-out 0.25s;
+}
+
+/* Top: the line hangs from the top edge, shoulders left and right of it. */
+#wake-strip[data-edge="top"]::before {
+  top: 0;
+  left: calc(50% - var(--line-long) / 2);
+  width: var(--line-long);
+  height: var(--line);
+  border-radius: 0 0 var(--line) var(--line);
+}
+
+#wake-strip[data-edge="top"]::after {
+  top: 0;
+  left: calc(50% - var(--line-long) / 2 - var(--line));
+  width: calc(var(--line-long) + 2 * var(--line));
+  height: var(--line);
+  background:
+    radial-gradient(circle at 0 100%, var(--cut)) left top / var(--line) var(--line) no-repeat,
+    radial-gradient(circle at 100% 100%, var(--cut)) right top / var(--line) var(--line) no-repeat;
+}
+
+/* Left and right: the same, standing up. */
+#wake-strip[data-edge="left"]::before {
+  left: 0;
+  top: calc(50% - var(--line-long) / 2);
+  width: var(--line);
+  height: var(--line-long);
+  border-radius: 0 var(--line) var(--line) 0;
+}
+
+#wake-strip[data-edge="left"]::after {
+  left: 0;
+  top: calc(50% - var(--line-long) / 2 - var(--line));
+  width: var(--line);
+  height: calc(var(--line-long) + 2 * var(--line));
+  background:
+    radial-gradient(circle at 100% 0, var(--cut)) left top / var(--line) var(--line) no-repeat,
+    radial-gradient(circle at 100% 100%, var(--cut)) left bottom / var(--line) var(--line) no-repeat;
+}
+
+#wake-strip[data-edge="right"]::before {
+  right: 0;
+  top: calc(50% - var(--line-long) / 2);
+  width: var(--line);
+  height: var(--line-long);
+  border-radius: var(--line) 0 0 var(--line);
+}
+
+#wake-strip[data-edge="right"]::after {
+  right: 0;
+  top: calc(50% - var(--line-long) / 2 - var(--line));
+  width: var(--line);
+  height: calc(var(--line-long) + 2 * var(--line));
+  background:
+    radial-gradient(circle at 0 0, var(--cut)) left top / var(--line) var(--line) no-repeat,
+    radial-gradient(circle at 0 100%, var(--cut)) left bottom / var(--line) var(--line) no-repeat;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #wake-strip.line::before,
+  #wake-strip.line::after {
+    transition: none;
+  }
+}
+
+/* High contrast drops the shadow and may repaint the black: keep it a line. */
+@media (forced-colors: active) {
+  #wake-strip::before {
+    background: CanvasText;
+  }
+
+  #wake-strip::after {
+    display: none;
+  }
+}
+
+/* ── Island ─────────────────────────────────────────────────────────────── */
+
+/* Placed and shaped per dock edge every frame (applyGeometry in island.ts). */
+#island {
+  position: absolute;
+  background: #000;
+  border-radius: 0 0 14px 14px;
+  overflow: visible;
+  will-change: width, height, transform;
+}
+
+#island-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+/* Shoulders: where the island meets the screen edge it flares outwards in a
+   concave curve instead of ending in a square corner. Each one is a small
+   square beside the island at the two ends of its edge-touching side, black
+   except for a quarter circle cut out of the corner away from both the edge
+   and the island. --shoulder follows the island's depth and shrinks to 0
+   while it floats in a drag (set in applyGeometry), so they vanish with it. */
+#island::before,
+#island::after {
+  content: "";
+  position: absolute;
+  width: var(--shoulder, 0px);
+  height: var(--shoulder, 0px);
+  pointer-events: none;
+  --cut: transparent calc(var(--shoulder, 0px) - 0.5px), #000 var(--shoulder, 0px);
+}
+
+/* Top: left and right of the island, against the top of the screen. */
+#island[data-edge="top"]::before {
+  top: 0;
+  right: 100%;
+  background: radial-gradient(circle at 0 100%, var(--cut));
+}
+
+#island[data-edge="top"]::after {
+  top: 0;
+  left: 100%;
+  background: radial-gradient(circle at 100% 100%, var(--cut));
+}
+
+/* Left: above and below the island, against the left of the screen. */
+#island[data-edge="left"]::before {
+  left: 0;
+  bottom: 100%;
+  background: radial-gradient(circle at 100% 0, var(--cut));
+}
+
+#island[data-edge="left"]::after {
+  left: 0;
+  top: 100%;
+  background: radial-gradient(circle at 100% 100%, var(--cut));
+}
+
+/* Right: mirrored. */
+#island[data-edge="right"]::before {
+  right: 0;
+  bottom: 100%;
+  background: radial-gradient(circle at 0 0, var(--cut));
+}
+
+#island[data-edge="right"]::after {
+  right: 0;
+  top: 100%;
+  background: radial-gradient(circle at 0 100%, var(--cut));
+}
+
+/* While dragged, a soft light on the side that will meet the edge it snaps to. */
+#island[data-preview] {
+  transition: box-shadow 0.18s ease-out;
+}
+
+#island[data-preview="top"] {
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.32), 0 -6px 16px -8px rgba(255, 255, 255, 0.4);
+}
+
+#island[data-preview="left"] {
+  box-shadow: inset 2px 0 0 rgba(255, 255, 255, 0.32), -6px 0 16px -8px rgba(255, 255, 255, 0.4);
+}
+
+#island[data-preview="right"] {
+  box-shadow: inset -2px 0 0 rgba(255, 255, 255, 0.32), 6px 0 16px -8px rgba(255, 255, 255, 0.4);
+}
+
+/* Plain-browser preview only (dev-preview.ts): a stand-in for the screen. */
+#dev-screen {
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  transform-origin: 0 0;
+  background: linear-gradient(160deg, #3a4150 0%, #252a33 55%, #1c2028 100%);
+}
+
+#dev-screen #root {
+  transition: left 0.45s cubic-bezier(0.3, 1.25, 0.5, 1), top 0.45s cubic-bezier(0.3, 1.25, 0.5, 1);
+}
+
+#bot-canvas,
+#greeting-canvas {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* The drop sequence. Sits under the header and takes over the island body; it
+   cross-fades in and out, so the last frame stays up while the views return. */
+#upload-layer {
+  position: absolute;
+  top: 0;
+  width: 640px;
+  height: 176px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease-in-out;
+}
+
+#upload-layer.on {
+  opacity: 1;
+}
+
+#upload-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+#upload-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+
+/* Invisible hit areas over the buttons the canvas paints. */
+.upload-hit {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  border-radius: 13px;
+  background: none;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* The ordinary views step aside while the sequence owns the body. */
+#views.hidden-by-upload {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease-in-out;
+}
+
+#bot-glow {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(6px);
+  transition: opacity 0.4s ease-in-out, background 0.4s ease-in-out;
+}
+
+#countdown {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+  width: 0;
+}
+
+/* Compact 2×2 mini grid, to the right of the notch. */
+#mini-grid {
+  position: absolute;
+  width: 29px;
+  height: 29px;
+  display: grid;
+  grid-template-columns: 13px 13px;
+  grid-auto-rows: 13px;
+  gap: 3px;
+  pointer-events: none;
+  transition: opacity 0.25s ease-in-out;
+}
+
+/* A mini character: the slot is the body, the canvas is larger and overflows it so
+   hands, badges and particles are not cut off. */
+.mini {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.mini canvas {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* ── Content shell (expanded) ───────────────────────────────────────────── */
+
+#content {
+  position: absolute;
+  inset: 0;
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.2s ease-in-out;
+}
+
+#header {
+  height: 48px;
+  flex: 0 0 48px;
+  display: flex;
+  align-items: center;
+  margin: 0 -10px;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.tabs {
+  display: flex;
+  gap: 5px;
+  padding-left: 14px;
+}
+
+.tab {
+  width: 30px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  border-radius: 11px;
+  color: var(--dim-2);
+  cursor: default;
+}
+
+.tab:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #b0b5be;
+}
+
+.tab.on {
+  background: var(--tab-on);
+  color: var(--ink);
+}
+
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 14px;
+  padding-right: 16px;
+}
+
+.header-actions button {
+  border: 0;
+  background: transparent;
+  color: var(--dim-2);
+  display: grid;
+  place-items: center;
+  cursor: default;
+}
+
+.header-actions button.on {
+  color: var(--ink);
+}
+
+.header-actions button[hidden] {
+  display: none;
+}
+
+.header-actions .max-btn:hover {
+  color: var(--ink);
+}
+
+#views {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.view {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: scale(0.97);
+  pointer-events: none;
+  transition: opacity 0.16s ease-in;
+}
+
+.view.on {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+  transition: opacity 0.3s ease-out 0.16s, transform 0.3s cubic-bezier(0.3, 1.2, 0.4, 1) 0.16s;
+}
+
+/* ── Cards ──────────────────────────────────────────────────────────────── */
+
+.card {
+  position: relative;
+  height: 100%;
+  border-radius: 20px;
+  background: var(--card);
+  border: 1px solid var(--hairline);
+  overflow: hidden;
+}
+
+.card.wash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    280px 280px at 50% 130%,
+    var(--wash) 0%,
+    rgba(0, 0, 0, 0) 70%
+  );
+  pointer-events: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  display: inline-block;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+
+.btn {
+  font: 500 12.5px var(--font);
+  padding: 7px 13px;
+  border: 0;
+  border-radius: 999px;
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: transform 0.08s ease-out, background 0.12s ease-out;
+}
+
+.btn:active {
+  transform: scale(0.94);
+}
+
+.btn.primary {
+  background: var(--ink);
+  color: #0b0c0e;
+}
+
+.btn.secondary {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--ink-2);
+}
+
+.btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.btn .kbd {
+  font-size: 10.5px;
+  padding: 0 4px;
+  border-radius: 4px;
+  opacity: 0.55;
+}
+
+.btn.primary .kbd {
+  border: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.btn.secondary .kbd {
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.link-btn {
+  border: 0;
+  background: transparent;
+  font: 500 11px var(--font);
+  cursor: default;
+}
+
+.icon-btn {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--dim-4);
+  display: grid;
+  place-items: center;
+  cursor: default;
+}
+
+/* ── Overview ───────────────────────────────────────────────────────────── */
+
+.overview {
+  display: flex;
+  gap: 10px;
+  height: 100%;
+}
+
+.overview > .left {
+  flex: 0 0 322px;
+  width: 322px;
+}
+
+.overview > .right {
+  flex: 1 1 auto;
+}
+
+.card-body {
+  position: relative;
+  z-index: 1;
+  padding-top: 10px;
+}
+
+.who {
+  padding: 0 36px 0 108px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.who .name {
+  font: 600 12px var(--font);
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.who .tool {
+  font: 400 11px var(--font);
+  color: var(--dim-2);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.who .count {
+  font: 400 11px var(--font);
+  color: var(--dim-3);
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+}
+
+.jump {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 2;
+}
+
+/* Ticker */
+
+.ticker {
+  position: relative;
+  height: 44px;
+  margin: 6px 12px 0 108px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 12%,
+    #000 85%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 12%, #000 85%, transparent 100%);
+}
+
+.ticker-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transform-origin: left center;
+  will-change: transform, opacity;
+}
+
+.ticker-row .tick-icon {
+  width: 12px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 12px;
+  color: var(--dim-2);
+}
+
+.ticker-row .tick-text {
+  /* A block, so a long step is cut with an ellipsis instead of spilling. */
+  display: block;
+  font: 500 13px var(--font);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Shimmer sweep, 2.2 s — same as TickerShimmerText / ShimmeringText */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    #7c818a 0%,
+    #f2f3f5 40%,
+    #7c818a 70%
+  );
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 2.2s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -130% 0;
+  }
+}
+
+/* ── Agent pills ────────────────────────────────────────────────────────── */
+
+.pills {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 28px;
+  gap: 4px;
+  align-content: center;
+  padding: 0 8px;
+}
+
+.pill {
+  position: relative;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--card-flat);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  display: flex;
+  align-items: center;
+  cursor: default;
+  transition: transform 0.2s cubic-bezier(0.3, 1.2, 0.4, 1), background 0.18s, border-color 0.18s,
+    box-shadow 0.18s, filter 0.18s;
+}
+
+.pill .mini {
+  flex: 0 0 auto;
+  margin-inline-start: 7px;
+}
+
+/* The label hugs its mini character rather than centring across the whole pill,
+   so it stays attached in both directions and truncates at the far end. */
+.pill .lbl {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-inline: 8px 12px;
+  font: 600 10px var(--font);
+  color: var(--dim-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.pill:hover {
+  transform: scale(1.04);
+  filter: brightness(1.06);
+}
+
+.pill-badge {
+  position: absolute;
+  top: -3px;
+  inset-inline-end: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0b0c0e;
+  display: grid;
+  place-items: center;
+}
+
+.pill-badge i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #000;
+}
+
+.pill-badge svg {
+  width: 6px;
+  height: 6px;
+}
+
+/* ── Generic text blocks ────────────────────────────────────────────────── */
+
+.title {
+  font: 600 15px var(--font);
+}
+
+.sub {
+  font: 400 13px var(--font);
+  color: var(--dim);
+}
+
+.detail {
+  font: 400 12px var(--font);
+  color: var(--red-text);
+}
+
+.who-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font: 400 12px var(--font);
+  color: var(--dim-2);
+}
+
+.who-row .n {
+  font: 600 12px var(--font);
+  color: var(--ink);
+}
+
+/* One line, whatever the language: the name gives way first, then the label. */
+.who-row > span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 100 auto;
+}
+
+.who-row > .n {
+  flex: 0 1 auto;
+}
+
+/* Fixed-height cards: long text truncates instead of spilling out, and no
+   line is squeezed shorter than itself (which would cut text mid-glyph). */
+.stack > * {
+  min-width: 0;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+
+.stack > .title,
+.stack > .detail {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* The error card also carries a title and two buttons: one line of detail is
+   all that fits (the full text is in the tooltip). */
+.stack > .detail {
+  -webkit-line-clamp: 1;
+}
+
+.stack > .actions > .sub {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.code {
+  font: 400 12px var(--mono);
+  color: #e8e9ec;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 5px 10px;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: text;
+}
+
+.stack {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Settings view (in-island quick settings) ───────────────────────────── */
+
+/* Three 28 px rows in one column capped at 392 px, so every row shares the
+   same start and end edges. The column sits physically beside the character, who does
+   not flip in Persian; the 88 px left padding keeps 16 px clear of him. */
+.qs {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 16px 0 88px;
+  --qs-label: 104px;
+  font: 400 13px var(--font);
+  color: #c5c8cd;
+}
+
+.qs-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 392px;
+  /* The column hugs the reading start: the right edge in fa, character's side in en. */
+  margin-inline-end: auto;
+  height: 28px;
+  min-width: 0;
+}
+
+/* Every row lets its flexible part shrink first (label text, slider, chip
+   text), so nothing runs past the card edge on a narrow island. */
+.qs-label {
+  flex: 0 1 var(--qs-label);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-weight: 500;
+  color: #d4d7dc;
+}
+
+.qs-label-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qs-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  flex: 0 0 16px;
+  color: var(--dim);
+}
+
+.qs-ctrl {
+  flex: 1 1 auto;
+  /* Fixed controls (switch, segments) never squeeze; the label gives way. */
+  min-width: min-content;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.qs :is(button, input):focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 2px;
+}
+
+/* Volume: a 28 px hit area around a 4 px track that fills up to the value,
+   growing to the column's end edge. */
+.qs-vol {
+  --fill: 0%;
+  --fill-dir: to right;
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  height: 28px;
+  background: transparent;
+  border-radius: 0;
+  transition: opacity 0.15s;
+}
+
+:root[lang="fa"] .qs-vol {
+  --fill-dir: to left;
+}
+
+.qs-vol::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    var(--fill-dir),
+    #e8e9ec var(--fill),
+    rgba(255, 255, 255, 0.3) var(--fill)
+  );
+}
+
+.qs-vol::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+  margin-top: -4px;
+  transition: transform 0.12s ease-out;
+}
+
+.qs-vol:hover:not(:disabled)::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+.qs-vol:focus-visible {
+  outline: none;
+}
+
+.qs-vol:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35);
+}
+
+.qs-vol:disabled {
+  opacity: 0.35;
+}
+
+/* Switch: a visible off track and a 26 px tall hit box around the 18 px pill. */
+.qs .switch:not(.on) {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.qs .switch:hover:not(.on) {
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.qs .switch::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+
+/* The knob sits at the inline end when on, so it mirrors in Persian. */
+:root[lang="fa"] .qs .switch::after {
+  left: auto;
+  right: 2px;
+}
+
+:root[lang="fa"] .qs .switch.on::after {
+  transform: translateX(-14px);
+}
+
+/* Auto-close: a segmented radiogroup of numbers with the unit attached. */
+.qs-seg-wrap {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.qs-seg {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.qs-seg button {
+  min-width: 32px;
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dim);
+  font: 400 13px var(--font);
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+  transition: background 0.12s, color 0.12s;
+}
+
+.qs-seg button:hover:not(.on) {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--ink-2);
+}
+
+.qs-seg button.on {
+  background: #2c2f37;
+  color: var(--ink);
+}
+
+.qs-seg button:focus-visible {
+  outline-offset: 0;
+}
+
+.qs-unit {
+  color: var(--dim);
+}
+
+/* Account status (plain when signed in, a sign-in action when signed out)
+   and the settings button at the column's end. */
+.qs-foot {
+  gap: 8px;
+}
+
+.qs-chip,
+.qs-open {
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #c5c8cd;
+  font: 400 13px var(--font);
+  white-space: nowrap;
+  cursor: default;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.qs-chip {
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+  gap: 4px;
+  padding-inline: 4px 12px;
+}
+
+.qs-chip[hidden] {
+  display: none;
+}
+
+.qs-chip-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qs-chip-ico {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--amber);
+  color: #0b0c0e;
+}
+
+.qs-chip.ok .qs-chip-ico {
+  background: var(--green);
+}
+
+/* Signed in is a status, not a control. */
+.qs-chip.ok {
+  border-color: transparent;
+  background: transparent;
+}
+
+.qs-signin {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.qs-open {
+  flex: 0 0 auto;
+  gap: 8px;
+  padding-inline: 8px 12px;
+  font-weight: 500;
+  color: #e3e5e8;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.qs-signin:hover,
+.qs-open:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+}
+
+.qs-signin:active,
+.qs-open:active {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.switch {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.15);
+  flex: 0 0 32px;
+  transition: background 0.18s;
+  cursor: default;
+  border: 0;
+}
+
+.switch.on {
+  background: var(--green);
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.18s;
+}
+
+.switch.on::after {
+  transform: translateX(14px);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  width: 72px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+/* ── Utility ────────────────────────────────────────────────────────────── */
+
+.grow {
+  flex: 1 1 auto;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* ── Chat (prompt view) ─────────────────────────────────────────────────── */
+
+.chat-card {
+  overflow: hidden;
+}
+
+.chat-body {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* The left side stays clear of the character, who never flips. */
+  padding: 12px 16px 12px 88px;
+}
+
+.chip-row:empty {
+  display: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font: 400 11.5px var(--font);
+  color: var(--ink-2);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  transform: scale(1.06);
+  transition: border-color 0.3s ease-out 0.45s, transform 0.3s ease-out 0.45s;
+}
+
+.chip.settled {
+  border-color: rgba(255, 255, 255, 0);
+  transform: scale(1);
+}
+
+.chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff6b5b, #f7b32b, #2dd4a7, #38bdf8, #a78bfa);
+}
+
+.chat-log {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.chat-row {
+  display: flex;
+}
+
+/* Logical sides: in Persian the log runs right-to-left, so the user's bubbles
+   move to the left and replies hug the right, mirrored from English. */
+.chat-row.user {
+  justify-content: flex-end;
+  padding-inline-start: 32px;
+}
+
+.bubble {
+  background: rgba(255, 255, 255, 0.13);
+  border-radius: 12px;
+  padding: 6px 10px;
+  font: 400 12.5px/1.5 var(--font);
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+.reply {
+  font: 400 12.5px var(--font);
+  color: #b0b5be;
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+.typing {
+  display: flex;
+  gap: 4px;
+  padding: 4px 2px;
+}
+
+.typing i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--dim-3);
+  animation: typing 0.9s ease-in-out infinite;
+}
+
+.typing i:nth-child(2) {
+  animation-delay: 0.14s;
+}
+
+.typing i:nth-child(3) {
+  animation-delay: 0.28s;
+}
+
+@keyframes typing {
+  0%, 100% { transform: scale(0.6); }
+  50% { transform: scale(1.2); }
+}
+
+/* Starter prompts of the chosen agent, above the message box of an empty chat. */
+.starters {
+  display: flex;
+  gap: 6px;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.starters:empty {
+  display: none;
+}
+
+.starter {
+  --agent: #a78bfa;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--agent) 38%, transparent);
+  background: color-mix(in srgb, var(--agent) 12%, transparent);
+  color: var(--ink-2);
+  font: 400 11.5px var(--font);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+  transition: background 0.16s, border-color 0.16s;
+}
+
+.starter:hover {
+  background: color-mix(in srgb, var(--agent) 24%, transparent);
+  border-color: color-mix(in srgb, var(--agent) 70%, transparent);
+}
+
+.starter:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--agent) 80%, white);
+  outline-offset: 1px;
+}
+
+/* An agent pill's card: its one-line description. */
+.agent-desc {
+  text-wrap: pretty;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.chat-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+}
+
+.chat-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 400 13px var(--font);
+  outline: none;
+  cursor: text;
+}
+
+.chat-input::placeholder {
+  color: var(--dim-3);
+}
+
+/* A one-line textarea that reads like a text field: no wrap, no handle. */
+textarea.chat-input {
+  display: block;
+  resize: none;
+  padding: 0;
+  line-height: 1.5;
+  height: 1.5em;
+  max-height: 1.5em;
+  white-space: pre;
+  overflow: hidden;
+}
+
+/* ── Maximised chat: a large island, still docked ───────────────────────────
+   Same conversation, more room: a centred column of comfortable line length,
+   an input bar that grows to a few lines, a wider history list. */
+#island.maximized .chat-body {
+  padding: 16px 28px 18px 104px;
+  gap: 10px;
+}
+
+#island.maximized .chat-body > :is(.chat-top, .starters, .chat-bar, .hist, .chat-signin) {
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+#island.maximized .chat-log > * {
+  width: min(100%, 760px);
+  align-self: center;
+  flex-shrink: 0;
+}
+
+#island.maximized .chat-bar {
+  align-items: flex-end;
+  padding: 9px 12px;
+  border-radius: 14px;
+}
+
+#island.maximized textarea.chat-input {
+  font-size: 14px;
+  max-height: calc(1.5em * 6);
+  white-space: pre-wrap;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  /* Level with the pills beside it while it is one line. */
+  margin-block: 3px;
+}
+
+.send-btn {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #0b0c0e;
+  display: grid;
+  place-items: center;
+  cursor: default;
+  transition: transform 0.08s ease-out;
+}
+
+.send-btn:active {
+  transform: scale(0.94);
+}
+
+/* While a reply is on its way the send button turns into stop. */
+.send-btn.stop {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--ink);
+}
+
+/* Agent chip at the start of the chat bar: a native <select> dressed as a pill,
+   so its list opens as the OS popup and works with the keyboard. */
+.agent-pick {
+  flex: 0 1 auto;
+  max-width: 136px;
+  min-width: 0;
+  height: 24px;
+  padding: 0 22px 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.09);
+  /* Small chevron so the chip reads as a menu. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' fill='none' stroke='%239398a1' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  color: var(--dim);
+  font: 500 11px var(--font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  cursor: default;
+  color-scheme: dark;
+}
+
+:root[lang="fa"] .agent-pick {
+  padding: 0 10px 0 22px;
+  background-position: left 9px center;
+}
+
+.agent-pick:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.agent-pick.on {
+  background-color: rgba(167, 139, 250, 0.22);
+  color: var(--ink);
+}
+
+.agent-pick:focus-visible {
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.4);
+}
+
+.agent-pick:disabled {
+  opacity: 0.5;
+}
+
+.agent-pick option,
+.agent-pick optgroup {
+  background: #1a1c20;
+  color: var(--ink);
+}
+
+/* Signed out: the card asks for a sign-in instead of offering a dead input. */
+.chat-signin {
+  display: none;
+  align-items: center;
+  gap: 16px;
+  height: 100%;
+  padding-inline-start: 34px;
+}
+
+.chat-body.signed-out > :not(.chat-signin) {
+  display: none;
+}
+
+.chat-body.signed-out > .chat-signin {
+  display: flex;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Anything the chat hides with the `hidden` attribute stays hidden, whatever
+   display its class gives it. */
+.chat-body [hidden] {
+  display: none !important;
+}
+
+/* Top row: the dropped file on one side, balance and history on the other. */
+.chat-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+  flex: 0 0 auto;
+}
+
+.chat-top > .chip-row {
+  min-width: 0;
+}
+
+.top-btn {
+  width: 26px;
+  height: 22px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--dim-2);
+  display: grid;
+  place-items: center;
+  cursor: default;
+}
+
+.top-btn:hover:not(:disabled),
+.top-btn.on {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--ink);
+}
+
+.top-btn:disabled {
+  opacity: 0.4;
+}
+
+.top-btn:focus-visible,
+.bal-chip:focus-visible,
+.hist button:focus-visible,
+.appr-card button:focus-visible,
+.isl-alert button:focus-visible,
+.appr-expand:focus-visible,
+.chat-signin .btn:focus-visible,
+.md-copy:focus-visible,
+.md-link:focus-visible {
+  outline: 1.5px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 1px;
+}
+
+/* Token balance (views/shared.ts, chat and Create); red once it reaches zero,
+   like the mobile header chip. */
+.bal-chip {
+  height: var(--isl-pill-h);
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(167, 139, 250, 0.14);
+  color: #c4b5fd;
+  font: 600 11px var(--font);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.bal-chip:hover {
+  background: rgba(167, 139, 250, 0.22);
+}
+
+.bal-chip.empty {
+  background: rgba(244, 80, 94, 0.16);
+  color: var(--red-text);
+}
+
+/* Longer replies scroll: soften the cut at both edges instead of slicing glyphs. */
+.chat-log {
+  padding: 4px 0;
+  padding-inline-end: 6px;
+  scrollbar-gutter: stable;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 6px, #000 calc(100% - 6px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 6px, #000 calc(100% - 6px), transparent 100%);
+}
+
+/* ── Chat: replies in markdown ─────────────────────────────────────────── */
+
+.reply.md {
+  line-height: 1.5;
+  white-space: normal;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+/* Three sizes only: 11.5 (code, tables, notes), 13 (text, small headings), 15. */
+.reply.md > * + *,
+.md-part > * + * {
+  margin-top: 6px;
+}
+
+.md-part:empty {
+  display: none;
+}
+
+.reply.md :is(h1, h2, h3, h4) {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.reply.md :is(h1, h2) { font-size: 15px; }
+.reply.md :is(h3, h4) { font-size: 13px; }
+
+.reply.md * + :is(h1, h2, h3, h4) {
+  margin-top: 12px;
+}
+
+.reply.md :is(h1, h2, h3, h4) + * {
+  margin-top: 4px;
+}
+
+.reply.md strong {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.reply.md del {
+  opacity: 0.7;
+}
+
+.md-list {
+  padding-inline-start: 18px;
+}
+
+.md-list .md-list {
+  margin-top: 2px;
+}
+
+/* An item keeps its list's direction (markers line up); its own text still
+   lays out by its first letter. */
+.md-li {
+  unicode-bidi: plaintext;
+}
+
+.md-li + .md-li {
+  margin-top: 2px;
+}
+
+.md-li > * + * {
+  margin-top: 4px;
+}
+
+.md-quote {
+  border-inline-start: 2px solid rgba(255, 255, 255, 0.18);
+  padding-inline-start: 10px;
+  color: var(--dim);
+}
+
+.md-quote > * + * {
+  margin-top: 4px;
+}
+
+.md-hr {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.md-link {
+  color: #a5b4fc;
+  text-decoration: underline;
+  text-decoration-color: rgba(165, 180, 252, 0.35);
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.md-link:hover {
+  text-decoration-color: currentColor;
+}
+
+.md-host {
+  display: inline-block;
+  margin-inline-start: 4px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--dim-2);
+  font: 400 10.5px var(--font);
+  text-decoration: none;
+  vertical-align: middle;
+}
+
+.md-ic {
+  font: 400 11.5px var(--mono);
+  color: #e8e9ec;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0 4px;
+  unicode-bidi: isolate;
+}
+
+/* Code always reads left-to-right, scrolls sideways and never wraps. */
+.md-code {
+  direction: ltr;
+  text-align: left;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.md-code-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px 0 10px;
+}
+
+.md-code-lang {
+  flex: 1 1 auto;
+  font: 400 11px var(--mono);
+  color: var(--dim);
+}
+
+.md-copy {
+  min-height: 24px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--dim);
+  font: 500 10.5px var(--font);
+  cursor: default;
+}
+
+.md-copy:hover {
+  background: rgba(255, 255, 255, 0.13);
+  color: var(--ink);
+}
+
+.md-copy.done {
+  color: var(--green-2);
+}
+
+.md-code pre code {
+  font: inherit;
+}
+
+.md-code pre {
+  margin: 0;
+  padding: 6px 10px 8px;
+  overflow-x: auto;
+  white-space: pre;
+  font: 400 11.5px/1.5 var(--mono);
+  color: #e8e9ec;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.md-table {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.md-table table {
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+
+.md-table :is(th, td) {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  padding: 3px 8px;
+  text-align: left;
+  vertical-align: top;
+  min-width: 48px;
+  unicode-bidi: plaintext;
+}
+
+.md-table table[dir="rtl"] :is(th, td) {
+  text-align: right;
+}
+
+.md-table th {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink-2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Chat: the turn in flight ───────────────────────────────────────────── */
+
+.chat-row:is(.live, .stacked) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.chat-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--dim);
+  font: 400 11.5px var(--font);
+  white-space: nowrap;
+}
+
+.chat-status .typing {
+  padding: 0 2px;
+}
+
+.chat-status-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--dim-2);
+}
+
+/* Tool approval inside the chat: the Claude Code approval card, small. */
+.appr-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(245, 165, 36, 0.08);
+  border: 1px solid rgba(245, 165, 36, 0.24);
+}
+
+.appr-card.done {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+/* The button the user chose stays at full strength while it is sent. */
+/* Allow before the whole command has been seen: looks disabled, stays focusable. */
+.appr-card .btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* The chosen button while its decision is sent: dimmed, no hover, a spinner. */
+.appr-card .btn.chosen:disabled {
+  opacity: 0.7;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.appr-card .btn.chosen:disabled::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  border-right-color: transparent;
+  animation: appr-spin 0.8s linear infinite;
+}
+
+@keyframes appr-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .appr-card .btn.chosen:disabled::before {
+    animation: none;
+  }
+}
+
+/* 3. Hint and buttons stay at the bottom of the log while a long card scrolls
+   past: opaque in the card's own tint, with a hairline above. */
+.appr-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 -10px -8px;
+  padding: 6px 10px 8px;
+  border-top: 1px solid rgba(245, 165, 36, 0.16);
+  border-radius: 0 0 12px 12px;
+  background: #26201a;
+}
+
+.appr-card.done .appr-foot {
+  border-top-color: transparent;
+  background: transparent;
+}
+
+.appr-card .who-row {
+  gap: 6px;
+}
+
+.appr-ico {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  border-radius: 50%;
+  background: var(--amber);
+  color: #0b0c0e;
+  display: grid;
+  place-items: center;
+}
+
+.appr-card.done .appr-ico {
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--ink);
+}
+
+.appr-card .actions {
+  align-items: center;
+}
+
+/* What the user approves, in full: wrapped, up to seven lines (the whole card
+   then still fits the tallest island), then it scrolls inside the box with a
+   fade, an "N more lines" count and "Show all"; Allow waits until the end has
+   been seen (chat.ts). Its direction comes from chat.ts (LTR for commands and
+   URLs, else the first strong letter), isolated from the text around it. */
+.appr-sum-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.appr-sum {
+  font: 400 11.5px/1.5 var(--mono);
+  color: #e8e9ec;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 6px 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: calc(7 * 1.5em + 12px);
+  overflow-y: auto;
+  unicode-bidi: isolate;
+  text-align: start;
+  user-select: text;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.appr-sum.expanded {
+  max-height: none;
+}
+
+/* A local MCP tool's approval: server and tool by name, then the exact JSON
+   input (LTR whatever the UI language; chat.ts localCallDetails). */
+.appr-call {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.appr-call-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.appr-call-k {
+  flex: 0 0 auto;
+  font: 500 11px var(--font);
+  color: var(--dim);
+}
+
+.appr-call-v {
+  min-width: 0;
+  font: 400 11.5px/1.5 var(--mono);
+  color: #e8e9ec;
+  overflow-wrap: anywhere;
+  unicode-bidi: isolate;
+}
+
+.appr-args {
+  text-align: left;
+}
+
+.appr-sum-wrap.overflow .appr-sum {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent 100%);
+}
+
+.appr-sum-foot {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.appr-sum-wrap.overflow .appr-sum-foot {
+  display: flex;
+}
+
+.appr-more {
+  flex: 1 1 auto;
+  font: 500 11px var(--font);
+  color: var(--amber);
+}
+
+.appr-expand {
+  min-height: 24px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--ink);
+  font: 500 11px var(--font);
+  cursor: default;
+}
+
+.appr-expand:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.appr-hint {
+  font: 400 11px var(--font);
+  color: var(--dim);
+}
+
+.appr-sum:focus-visible {
+  outline: 1.5px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 1px;
+}
+
+.appr-outcome {
+  font: 500 11.5px var(--font);
+  color: var(--dim);
+}
+
+.appr-error {
+  font: 400 11.5px var(--font);
+  color: var(--red-text);
+}
+
+:is(.appr-card, .isl-alert, .hist) .btn {
+  min-height: var(--isl-pill-h);
+  padding: 4px 12px;
+  font-size: 11.5px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+}
+
+.btn.primary.danger {
+  background: var(--red);
+  color: #0b0c0e;
+}
+
+.btn.primary.danger:hover:not(:disabled),
+.btn.primary.danger:focus-visible {
+  background: #ff6b77;
+}
+
+.btn.primary.danger:active:not(:disabled) {
+  background: #e23c4b;
+}
+
+/* Out of tokens, with the way out (views/shared.ts, chat and Create). */
+.isl-alert {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(244, 80, 94, 0.1);
+  border: 1px solid rgba(244, 80, 94, 0.28);
+}
+
+.isl-alert-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: 400 12px var(--font);
+  color: #ffc2c8;
+}
+
+.isl-alert .btn {
+  flex: 0 0 auto;
+}
+
+/* A decided approval, kept as one muted line above the reply it led to. */
+.appr-record {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font: 400 11.5px var(--font);
+  color: var(--dim);
+}
+
+.appr-record-ico {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: grid;
+  place-items: center;
+}
+
+.appr-record.approve .appr-record-ico {
+  color: var(--green-2);
+}
+
+.appr-record.reject .appr-record-ico {
+  color: var(--red-text);
+}
+
+.appr-record-tool {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 11px var(--mono);
+  color: var(--dim-2);
+}
+
+/* ── Chat: MCP tools ────────────────────────────────────────────────────── */
+
+/* The input bar's tools chip: tinted while tools are on for this conversation. */
+.tools-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--isl-pill-h);
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--dim);
+  font: 500 11px var(--font);
+  white-space: nowrap;
+  outline: none;
+  cursor: default;
+}
+
+.tools-chip:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.tools-chip:focus-visible {
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.4);
+}
+
+.tools-chip:disabled {
+  opacity: 0.5;
+}
+
+.tools-chip-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.2px var(--dim-3);
+}
+
+.tools-chip.on {
+  background: rgba(34, 211, 238, 0.14);
+  color: var(--ink);
+}
+
+.tools-chip.on .tools-chip-dot {
+  background: var(--cyan);
+  box-shadow: none;
+}
+
+/* One row per tool step above the reply: icon, server · tool, state. A click
+   opens what went in and what came back (text only). */
+.tool-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tool-step {
+  min-width: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tool-step-head {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dim);
+  font: 400 11.5px var(--font);
+  text-align: start;
+  cursor: default;
+}
+
+.tool-step-head:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tool-step-head:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.35);
+}
+
+.tool-step-ico {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: grid;
+  place-items: center;
+}
+
+.tool-step.done .tool-step-ico {
+  color: var(--green-2);
+}
+
+.tool-step.error .tool-step-ico {
+  color: var(--red-text);
+}
+
+.tool-step.waiting .tool-step-ico {
+  color: var(--amber);
+}
+
+.tool-step:is(.declined, .stopped) .tool-step-ico {
+  color: var(--dim-2);
+}
+
+.tool-step-spin {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-top-color: var(--cyan);
+  animation: tool-step-spin 0.8s linear infinite;
+}
+
+@keyframes tool-step-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tool-step-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 11px var(--mono);
+  color: var(--ink-2);
+}
+
+.tool-step-state {
+  flex: 0 0 auto;
+  color: var(--dim-2);
+}
+
+.tool-step-chev {
+  margin-inline-start: auto;
+  display: grid;
+  place-items: center;
+  color: var(--dim-3);
+  transition: transform 0.15s ease-out;
+}
+
+:root[lang="fa"] .tool-step-chev {
+  transform: scaleX(-1);
+}
+
+.tool-step.open .tool-step-chev {
+  transform: rotate(90deg);
+}
+
+.tool-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 8px 8px;
+  padding-inline-start: 29px;
+}
+
+.tool-step-label {
+  font: 500 10.5px var(--font);
+  color: var(--dim-3);
+}
+
+.tool-step-pre {
+  margin: 0;
+  max-height: 140px;
+  overflow: auto;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--ink-2);
+  font: 400 11px/1.45 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.tool-step-pre:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.3);
+}
+
+.tool-step-none {
+  font: 400 11px var(--font);
+  color: var(--dim-3);
+}
+
+.tool-step-err {
+  font: 400 11.5px var(--font);
+  color: var(--red-text);
+}
+
+/* Said once, the first time a turn uses a tool. */
+.tools-hint {
+  padding-inline: 2px;
+  font: 400 11px var(--font);
+  color: var(--dim-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-step-spin {
+    animation: none;
+    border-color: var(--cyan);
+  }
+
+  .tool-step-chev {
+    transition: none;
+  }
+}
+
+/* Inside the chat card every pill in the bar and the top row is 26 px tall. */
+.chat-card :is(.agent-pick, .top-btn) {
+  height: var(--isl-pill-h);
+}
+
+.chat-card .top-btn {
+  width: var(--isl-pill-h);
+  border-radius: 13px;
+}
+
+.chat-card .send-btn {
+  width: var(--isl-pill-h);
+  height: var(--isl-pill-h);
+  flex: 0 0 var(--isl-pill-h);
+}
+
+.chat-card .chat-top {
+  min-height: var(--isl-pill-h);
+}
+
+.chat-card .chat-bar {
+  box-shadow: inset 0 0 0 1px transparent;
+  transition: box-shadow 0.15s, background 0.15s;
+}
+
+.chat-card .chat-bar:focus-within {
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.45);
+}
+
+.chat-card .chat-bar.busy {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.chat-card .chat-input:disabled {
+  opacity: 0.55;
+}
+
+.chat-card .btn.primary:not(.danger):not(:disabled):not([aria-disabled="true"]):hover,
+.hist-new:hover {
+  background: #fff;
+}
+
+/* Placeholder at ≥ 4.5:1 on the bar. */
+.chat-card .chat-input::placeholder {
+  color: var(--dim);
+}
+
+/* While a reply is on its way, Stop is the one action that matters: filled. */
+.chat-card .send-btn.stop {
+  background: var(--ink);
+  color: #0b0c0e;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.14);
+}
+
+.chat-card .send-btn:hover {
+  background: #fff;
+}
+
+/* One bright control at a time: Stop steps back while an approval waits
+   (Allow leads), Send while the field is empty or the top-up is offered. */
+.chat-card .send-btn.quiet {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.chat-card .send-btn.quiet:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.chat-card .send-btn:focus-visible {
+  outline: 1.5px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
+}
+
+/* ── Chat: history ──────────────────────────────────────────────────────── */
+
+/* One header while the list is open: its own (back, title, new chat). */
+.chat-body.history-open > :is(.chat-top, .chat-log, .starters, .chat-bar) {
+  display: none;
+}
+
+.hist {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hist-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.hist-back {
+  width: var(--isl-pill-h);
+  height: var(--isl-pill-h);
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--dim);
+  display: grid;
+  place-items: center;
+  cursor: default;
+}
+
+.hist-back:hover {
+  background: rgba(255, 255, 255, 0.13);
+  color: var(--ink);
+}
+
+/* The back chevron points back along the reading direction. */
+:root[lang="fa"] .hist-back svg {
+  transform: scaleX(-1);
+}
+
+.hist-title {
+  flex: 1 1 auto;
+  font: 600 12.5px var(--font);
+  color: var(--ink);
+}
+
+.hist-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--isl-pill-h);
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #0b0c0e;
+  font: 600 11px var(--font);
+  cursor: default;
+}
+
+.hist-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-block: 4px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 6px, #000 calc(100% - 6px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 6px, #000 calc(100% - 6px), transparent 100%);
+  scrollbar-gutter: stable;
+  padding-inline-end: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.hist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hist-item {
+  position: relative;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  flex: 0 0 auto;
+}
+
+.hist-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.hist-item.current {
+  background: rgba(99, 102, 241, 0.16);
+}
+
+.hist-item.busy {
+  opacity: 0.6;
+}
+
+.hist-open {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1px;
+  padding: 6px 10px;
+  padding-inline-end: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  text-align: start;
+  font: inherit;
+  cursor: default;
+}
+
+.hist-name,
+.hist-preview {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+:root[lang="fa"] :is(.hist-name, .hist-preview) {
+  text-align: right;
+}
+
+.hist-name {
+  font: 500 13px/1.5 var(--font);
+}
+
+.hist-preview {
+  font: 400 11px/1.5 var(--font);
+  color: var(--dim);
+}
+
+.hist-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 400 11px/1.5 var(--font);
+  color: var(--dim);
+}
+
+.hist-model {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--dim);
+  font: 400 10px var(--mono);
+}
+
+.hist-del {
+  position: absolute;
+  top: 6px;
+  inset-inline-end: 10px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--dim);
+  display: grid;
+  place-items: center;
+  opacity: 0.75;
+  cursor: default;
+}
+
+.hist-item:hover .hist-del,
+.hist-item:focus-within .hist-del {
+  opacity: 1;
+}
+
+.hist-del:hover {
+  background: rgba(244, 80, 94, 0.22);
+  color: var(--red-text);
+}
+
+.hist-confirm {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 54px;
+  gap: 4px;
+  padding-block: 6px;
+  padding-inline: 10px 8px;
+  font: 400 12px var(--font);
+  color: var(--ink-2);
+}
+
+.hist-confirm-title {
+  font: 500 13px/1.5 var(--font);
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+:root[lang="fa"] .hist-confirm-title {
+  text-align: right;
+}
+
+.hist-confirm-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hist-note {
+  padding: 0 10px 6px;
+  font: 400 11.5px var(--font);
+  color: var(--red-text);
+}
+
+.hist-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 8px;
+  color: var(--dim);
+  font: 400 12px var(--font);
+  text-align: center;
+}
+
+.hist-status:empty {
+  display: none;
+}
+
+.hist-err {
+  color: var(--red-text);
+  min-width: 0;
+}
+
+.hist-more {
+  align-self: center;
+  flex: 0 0 auto;
+}
+
+/* ── Drop zone ──────────────────────────────────────────────────────────── */
+
+.drop-card {
+  background: var(--card-flat);
+  border: 0;
+}
+
+.drop-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.drop-frame rect {
+  stroke: rgba(255, 255, 255, 0.13);
+  animation: dash-march 1.1s linear infinite, dash-breathe 7s ease-in-out infinite;
+}
+
+.drop-card.over {
+  background: radial-gradient(200px 200px at 50% 100%, rgba(34, 197, 94, 0.13), transparent 70%),
+    var(--card-flat);
+}
+
+.drop-card.over .drop-frame rect {
+  stroke: rgba(34, 197, 94, 0.65);
+  animation: dash-march 1.1s linear infinite;
+}
+
+@keyframes dash-march {
+  to { stroke-dashoffset: -11; }
+}
+
+@keyframes dash-breathe {
+  0%, 100% { stroke: rgba(255, 255, 255, 0.11); }
+  50% { stroke: rgba(255, 255, 255, 0.15); }
+}
+
+.drop-body {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding-left: 196px;
+}
+
+.drop-title {
+  font: 500 13px var(--font);
+  color: #d5d7db;
+  transition: color 0.2s;
+}
+
+.drop-card.over .drop-title {
+  color: var(--green-2);
+}
+
+.drop-tags {
+  display: flex;
+  gap: 6px;
+}
+
+.drop-tags span {
+  font: 400 11px var(--font);
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #b9bdc4;
+}
+
+/* ── Uploading ──────────────────────────────────────────────────────────── */
+
+.up-card {
+  background: radial-gradient(260px 260px at 50% 140%, rgba(52, 211, 153, 0.14), transparent 70%),
+    var(--card);
+}
+
+.up-card.done {
+  background: radial-gradient(260px 260px at 50% 140%, rgba(52, 211, 153, 0.28), transparent 70%),
+    var(--card);
+}
+
+.up-row {
+  position: absolute;
+  left: 26px;
+  top: 36px;
+  width: 526px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font: 400 12.5px var(--font);
+  color: #a9adb5;
+}
+
+.up-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.up-name.done {
+  color: var(--green-2);
+  font-weight: 600;
+}
+
+.up-pct {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  flex: 0 0 auto;
+}
+
+.up-track {
+  position: absolute;
+  left: 26px;
+  top: 58px;
+  width: 526px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.up-fill {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #1fa87a, #34d399);
+}
+
+.up-glow {
+  position: absolute;
+  left: 0;
+  top: -3px;
+  width: 28px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(110, 231, 183, 0.45);
+  filter: blur(5px);
+  pointer-events: none;
+}
+
+/* ── Integration cards (overview, left card) ────────────────────────────── */
+
+.left-body {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+}
+
+.int-card {
+  padding: 10px 12px 0 108px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The card is a fixed 322 px. In a right-to-left row, content that doesn't fit
+   spills out of the inline-end (left) side, under the character and past the card's
+   edge — so every line here must shrink and truncate instead. */
+.int-card > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.int-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding-right: 24px;
+}
+
+.int-head b {
+  font: 600 12px var(--font);
+  color: var(--ink);
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.int-head > span {
+  font: 400 11px var(--font);
+  color: var(--dim-2);
+  white-space: nowrap;
+  flex: 0 100 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.int-head > .dot,
+.int-head > .int-total {
+  flex: 0 0 auto;
+}
+
+.int-total {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: 2px;
+}
+
+.int-total span {
+  font: 500 11px var(--font);
+  color: #c5c8cd;
+  font-variant-numeric: tabular-nums;
+}
+
+.pulse {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+.int-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-top: 4px;
+  font: 400 11px var(--font);
+  color: var(--dim-3);
+}
+
+.int-status > span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.int-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+/* The first link names its target and may be long; it gives way, the short
+   ones after it (Refresh, Settings…) never do. */
+.int-actions > .link-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.int-actions > .link-btn:first-child {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.int-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 5px;
+}
+
+.int-rows.tight {
+  gap: 2px;
+  padding-top: 4px;
+}
+
+.int-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  min-width: 0;
+}
+
+.int-name {
+  font: 500 11px var(--font);
+  color: #9398a1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.int-row.first .int-name {
+  color: #c5c8cd;
+}
+
+.int-ago {
+  font: 400 10px var(--font);
+  color: var(--dim-3);
+  flex: 0 0 auto;
+}
+
+.int-sub {
+  font: 400 10px var(--font);
+  color: #4d5159;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.int-amount {
+  font: 500 11px var(--mono);
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+}
+
+.int-time {
+  font: 500 10px var(--mono);
+  color: #c9956a;
+  flex: 0 0 auto;
+}
+
+.int-more,
+.int-back {
+  border: 0;
+  background: transparent;
+  color: var(--dim-3);
+  display: grid;
+  place-items: center;
+  cursor: default;
+  flex: 0 0 auto;
+}
+
+.int-more {
+  width: 18px;
+  height: 18px;
+}
+
+.int-back {
+  width: 28px;
+  height: 28px;
+}
+
+.int-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 8px;
+  padding-right: 12px;
+}
+
+.int-stat {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.int-stat-icon {
+  width: 14px;
+  display: grid;
+  place-items: center;
+}
+
+.int-stat-label {
+  font: 400 11px var(--font);
+  color: var(--dim-3);
+}
+
+.int-stat-value {
+  margin-inline-start: auto;
+  font: 600 12px var(--font);
+  color: #c5c8cd;
+  font-variant-numeric: tabular-nums;
+}
+
+.int-balance {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  padding-top: 4px;
+}
+
+.int-balance span {
+  font: 700 20px var(--mono);
+  color: var(--ink);
+}
+
+.int-balance i {
+  font: 600 9px var(--font);
+  font-style: normal;
+  color: var(--dim-3);
+}
+
+.int-page {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 0;
+  background: transparent;
+  text-align: start;
+  cursor: default;
+  min-width: 0;
+}
+
+.int-page:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+}
+
+.int-emoji {
+  width: 14px;
+  font-size: 10px;
+  color: var(--dim-3);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  font-style: normal;
+}
+
+.int-empty {
+  font: 400 11px var(--font);
+  color: var(--dim-3);
+  padding-left: 8px;
+}
+
+.int-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: var(--dim-3);
+  cursor: default;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.int-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.int-detail-head b {
+  font: 600 11px var(--font);
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.int-badge {
+  font: 500 10px var(--font);
+  padding: 2px 6px;
+  border-radius: 999px;
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+}
+
+.int-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+}
+
+.int-commit {
+  font: 400 10.5px var(--font);
+  color: #c5c8cd;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.int-meta {
+  display: flex;
+  gap: 8px;
+  font: 400 10px var(--font);
+  color: var(--dim-3);
+}
+
+.int-link {
+  border: 0;
+  background: transparent;
+  font: 400 10px var(--mono);
+  color: #7c5cffd9;
+  text-align: left;
+  cursor: default;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.int-detail-text {
+  font: 400 10.5px/1.5 var(--mono);
+  color: var(--dim);
+  margin-top: 8px;
+  max-height: 88px;
+  overflow: auto;
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+.int-card.detail {
+  padding-top: 8px;
+}
+
+/* ── Persian ────────────────────────────────────────────────────────────────
+   Only text runs right-to-left. The island's geometry, the character, the pills and
+   every animation stay exactly where they are in English; the paddings that
+   keep text clear of the character are physical, so they hold in both directions. */
+
+:root[lang="fa"] :is(
+    .stack,
+    .chat-log,
+    .chat-bar,
+    .chat-top,
+    .starters,
+    .hist,
+    .chat-signin,
+    .int-card,
+    .who,
+    .pill,
+    .qs,
+    .drop-body,
+    .up-row
+  ) {
+  direction: rtl;
+}
+/* The drop text has no right padding in English; in Persian it starts there. */
+:root[lang="fa"] .drop-body {
+  padding-right: 24px;
+}
+
+/* Commands, paths and URLs read left-to-right in any language. */
+:root[lang="fa"] :is(.code, .int-link, .int-detail-text, .int-time) {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+:root[lang="fa"] .code {
+  text-align: left;
+}
+
+/* Steps hug the icon whatever their own language: left in English, right in
+   Persian, where the whole row runs right-to-left. */
+.ticker-row .tick-text {
+  text-align: left;
+}
+
+:root[lang="fa"] .ticker-row {
+  direction: rtl;
+  transform-origin: right center;
+}
+
+:root[lang="fa"] .ticker-row .tick-text {
+  text-align: right;
+}
+
+:root[lang="fa"] .ticker-row .tick-chevron {
+  transform: scaleX(-1);
+}
+
+/* Vazirmatn reads smaller than Segoe UI at the same size and its default line
+   height is much taller. Nudge the sizes up and pin the line height so text
+   stays legible without outgrowing the fixed island heights. */
+:root[lang="fa"] #content * {
+  line-height: 1.5;
+}
+
+:root[lang="fa"] .title {
+  font-size: 16px;
+}
+
+/* Who + two-line title + buttons must still fit the 108 px card at 1.5. */
+:root[lang="fa"] .stack {
+  gap: 3px;
+}
+
+:root[lang="fa"] #content .stack > .title {
+  line-height: 1.35;
+}
+
+:root[lang="fa"] :is(.sub, .chat-input, .drop-title) {
+  font-size: 13.5px;
+}
+
+:root[lang="fa"] :is(.bubble, .reply, .btn, .qs-row, .up-row) {
+  font-size: 13px;
+}
+
+:root[lang="fa"] :is(.who-row, .who .name, .int-head b, .int-stat-value) {
+  font-size: 12.5px;
+}
+
+:root[lang="fa"] :is(
+    .detail,
+    .chip,
+    .int-status,
+    .int-name,
+    .int-empty,
+    .int-head > span,
+    .int-stat-label,
+    .link-btn,
+    .agent-pick,
+    .drop-tags span
+  ) {
+  font-size: 11.5px;
+}
+
+:root[lang="fa"] :is(.int-ago, .int-sub, .int-meta, .int-badge) {
+  font-size: 10.5px;
+}
+
+/* The English chat on one scale: 15 (headings), 13 (text, names, the input,
+   alerts), 11 (meta, status, small buttons), 11.5 for code. The Persian rules
+   below override these. */
+.chat-card :is(.bubble, .reply.md, .hist-title, .isl-alert-text, .hist-confirm, .hist-status, .who-row) {
+  font-size: 13px;
+}
+
+.chat-card :is(
+    .hist-model, .chat-status, .appr-outcome, .appr-record, .appr-error, .hist-note, .md-copy, .md-host,
+    .bal-chip, .hist-new, .agent-pick, .md-table table
+  ) {
+  font-size: 11px;
+}
+
+.chat-card :is(.appr-card, .isl-alert, .hist) .btn {
+  font-size: 11px;
+}
+
+/* The Persian chat on one scale: 15 (headings), 13 (text, names, the input),
+   11.5 (meta, status, small buttons) — and nothing under 11.5. */
+:root[lang="fa"] .chat-card :is(
+    .chat-input, .hist-name, .hist-title, .who-row, .who-row .n, .hist-confirm, .hist-status, .isl-alert-text
+  ) {
+  font-size: 13px;
+}
+
+:root[lang="fa"] :is(
+    .hist-meta, .md-copy, .md-code-lang, .md-host, .hist-model, .bal-chip, .hist-new, .agent-pick,
+    .hist-preview, .chat-status, .appr-outcome, .appr-record, .appr-error, .hist-note, .md-table table,
+    .appr-more, .appr-expand, .appr-hint
+  ) {
+  font-size: 11.5px;
+}
+
+/* Fewer moving parts for people who asked for less motion (the island's own
+   height change is skipped in island.ts). */
+@media (prefers-reduced-motion: reduce) {
+  .typing i {
+    animation: none;
+  }
+
+  .chat-card *,
+  .chat-card *::before,
+  .chat-card *::after {
+    transition: none !important;
+  }
+}
+
+:root[lang="fa"] :is(.appr-card, .isl-alert, .hist) .btn {
+  font-size: 11.5px;
+}
+
+/* Persian chat: everything sits on the right. The user's bubbles hug the right
+   edge (not mirrored to the left), and replies align right even when a line is
+   English; dir=auto still orders the words of each line. Code stays LTR. */
+:root[lang="fa"] .chat-row.user {
+  justify-content: flex-start;
+  padding-inline-start: 0;
+  padding-inline-end: 32px;
+}
+
+:root[lang="fa"] .chat-card .bubble {
+  text-align: right;
+}
+
+:root[lang="fa"] .chat-card .reply.md :is(p, h1, h2, h3, h4, li, blockquote, .md-part) {
+  text-align: right;
+}

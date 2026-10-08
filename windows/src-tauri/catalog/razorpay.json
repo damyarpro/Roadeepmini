@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "id": "razorpay",
+  "name": "Razorpay",
+  "category": "payments",
+  "color": "#3395FF",
+  "desc": {
+    "fa": "پرداخت‌های تازهٔ Razorpay؛ پرداخت موفق تازه که بیاید خبرت می‌کند.",
+    "en": "Latest Razorpay payments; tells you about each captured one."
+  },
+  "keyUrl": "https://dashboard.razorpay.com/app/website-app-settings/api-keys",
+  "docsUrl": "https://razorpay.com/docs/api/payments/fetch-all-payments/",
+  "fields": [
+    {
+      "name": "keyId",
+      "kind": "text",
+      "label": { "fa": "Key ID", "en": "Key ID" },
+      "placeholder": "rzp_live_…",
+      "optional": false,
+      "pattern": "^rzp_(live|test)_[A-Za-z0-9]{10,20}$"
+    },
+    {
+      "name": "keySecret",
+      "kind": "secret",
+      "label": { "fa": "Key secret", "en": "Key secret" },
+      "placeholder": "24 characters",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9]{20,40}$"
+    }
+  ],
+  "auth": [{ "type": "basic", "user": "keyId", "pass": "keySecret" }],
+  "hosts": ["api.razorpay.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.razorpay.com/v1/payments",
+    "query": { "count": "10" }
+  },
+  "list": {
+    "path": "/items",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/email",
+    "subtitle": "/method",
+    "status": "/status",
+    "time": "/created_at"
+  },
+  "statusMap": {
+    "captured": "ok",
+    "authorized": "info",
+    "created": "info",
+    "refunded": "off",
+    "failed": "err",
+    "*": "info"
+  },
+  "openUrl": "https://dashboard.razorpay.com/app/payments",
+  "webHosts": ["dashboard.razorpay.com"],
+  "pollEvery": 120,
+  "notify": { "on": "new", "statuses": ["ok"] }
+}

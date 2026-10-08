@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "id": "postmark",
+  "name": "Postmark",
+  "category": "comms",
+  "color": "#FFDE00",
+  "desc": {
+    "fa": "ایمیل‌های برگشتی Postmark؛ برگشتی تازه که بیاید خبرت می‌کند.",
+    "en": "Bounced emails on your Postmark server; tells you about new ones."
+  },
+  "keyUrl": "https://account.postmarkapp.com/servers",
+  "docsUrl": "https://postmarkapp.com/developer/api/bounce-api",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن سرور", "en": "Server API token" },
+      "placeholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "optional": false,
+      "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$",
+      "help": {
+        "fa": "سرورت را باز کن ← ⁨API Tokens⁩",
+        "en": "Open your server → API Tokens."
+      }
+    }
+  ],
+  "auth": [{ "type": "header", "name": "X-Postmark-Server-Token", "field": "token", "prefix": "" }],
+  "hosts": ["api.postmarkapp.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.postmarkapp.com/bounces",
+    "headers": { "Accept": "application/json" },
+    "query": { "count": "20", "offset": "0" }
+  },
+  "list": {
+    "path": "/Bounces",
+    "max": 10,
+    "sort": "time",
+    "id": "/ID",
+    "title": "/Email",
+    "subtitle": "/Subject",
+    "status": "/Type",
+    "time": "/BouncedAt"
+  },
+  "statusMap": {
+    "HardBounce": "err",
+    "SpamComplaint": "err",
+    "BadEmailAddress": "err",
+    "SoftBounce": "warn",
+    "Transient": "warn",
+    "DnsError": "warn",
+    "*": "info"
+  },
+  "count": "/TotalCount",
+  "openUrl": "https://account.postmarkapp.com/servers",
+  "webHosts": ["account.postmarkapp.com"],
+  "pollEvery": 300,
+  "notify": { "on": "new", "statuses": ["err", "warn"] }
+}

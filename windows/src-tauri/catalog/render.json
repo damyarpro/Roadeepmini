@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "id": "render",
+  "name": "Render",
+  "category": "dev",
+  "color": "#8A05FF",
+  "desc": {
+    "fa": "سرویس‌های Render و این‌که فعال‌اند یا معلق.",
+    "en": "Your Render services and whether they're running or suspended."
+  },
+  "keyUrl": "https://dashboard.render.com/u/settings",
+  "docsUrl": "https://api-docs.render.com/reference/list-services",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "rnd_…",
+      "optional": false,
+      "pattern": "^rnd_[A-Za-z0-9]{20,80}$"
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.render.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.render.com/v1/services",
+    "headers": { "Accept": "application/json" },
+    "query": { "limit": "20" }
+  },
+  "list": {
+    "path": "",
+    "max": 10,
+    "sort": "time",
+    "id": "/service/id",
+    "title": "/service/name",
+    "subtitle": "/service/type",
+    "status": "/service/suspended",
+    "time": "/service/updatedAt",
+    "url": "{item./service/dashboardUrl|url}"
+  },
+  "statusMap": { "not_suspended": "ok", "suspended": "off", "*": "info" },
+  "openUrl": "https://dashboard.render.com/",
+  "webHosts": ["dashboard.render.com"],
+  "pollEvery": 300,
+  "notify": { "on": "status", "statuses": ["off"] }
+}

@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "id": "harvest",
+  "name": "Harvest",
+  "category": "work",
+  "color": "#FA5D00",
+  "desc": {
+    "fa": "آخرین زمان‌های ثبت‌شده در Harvest، با پروژه و یادداشت.",
+    "en": "Your latest Harvest time entries, with project and notes."
+  },
+  "keyUrl": "https://id.getharvest.com/developers",
+  "docsUrl": "https://help.getharvest.com/api-v2/timesheets-api/timesheets/time-entries/",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن دسترسی شخصی", "en": "Personal access token" },
+      "placeholder": "1234567.pt.…",
+      "optional": false,
+      "pattern": "^[0-9]{3,12}\\.pt\\.[A-Za-z0-9_\\-]{20,200}$"
+    },
+    {
+      "name": "accountId",
+      "kind": "text",
+      "label": { "fa": "شناسهٔ حساب", "en": "Account ID" },
+      "placeholder": "123456",
+      "optional": false,
+      "pattern": "^[0-9]{3,12}$",
+      "help": {
+        "fa": "در همان صفحهٔ ساخت توکن، زیر ⁨Account ID⁩ آمده.",
+        "en": "Shown under Account ID on the same page as the token."
+      }
+    }
+  ],
+  "auth": [
+    { "type": "bearer", "field": "token" },
+    { "type": "header", "name": "Harvest-Account-Id", "field": "accountId", "prefix": "" }
+  ],
+  "hosts": ["api.harvestapp.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.harvestapp.com/v2/time_entries",
+    "headers": { "Accept": "application/json" },
+    "query": { "per_page": "10" }
+  },
+  "list": {
+    "path": "/time_entries",
+    "max": 10,
+    "id": "/id",
+    "title": "/project/name",
+    "subtitle": "/notes",
+    "time": "/updated_at"
+  },
+  "count": "/total_entries",
+  "openUrl": "https://id.getharvest.com/",
+  "webHosts": ["id.getharvest.com"],
+  "pollEvery": 900
+}

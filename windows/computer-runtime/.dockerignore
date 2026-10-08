@@ -1,0 +1,4 @@
+node_modules
+*.test.mjs
+README.md
+package-lock.json

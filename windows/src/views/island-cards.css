@@ -1,0 +1,187 @@
+/* The island's waiting cards (questions, folding), the live diff and the
+   ticker's diff rows. Loaded after style.css by views/views.ts. */
+
+/* A view that is not on is only transparent, not gone: an infinite animation
+   inside it (the drop frame's marching dashes, the ticker's shimmer) would keep
+   the webview repainting every frame for as long as the app runs. The same
+   goes for every view while the island is folded, hidden or greeting
+   (island.ts puts `asleep` on #views). Nothing looks different: a view's
+   animations resume the moment it is on screen again. */
+.view:not(.on) *,
+#views.asleep * {
+  animation-play-state: paused;
+}
+
+/* ── Waiting cards ─────────────────────────────────────────────────────── */
+
+/* Folds a waiting permission card or question away without answering it. */
+.fold {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 2;
+}
+
+/* Options to pick from when Claude Code asks a question. */
+.actions.options {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.stack > .title.question-text {
+  -webkit-line-clamp: 2;
+}
+
+.actions.options .btn.off {
+  opacity: 0.4;
+}
+
+.actions.options .link-btn {
+  color: var(--dim-2);
+}
+
+.actions.options .link-btn:hover {
+  color: var(--ink);
+}
+
+/* Claude's final message on the finished card: one line, never past the card. */
+.stack > .title.one-line {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* ── Ticker: a live diff step is the file name, then +N −M right after it ── */
+
+.ticker-row .tick-count {
+  flex: 0 0 auto;
+  margin-inline-start: -6px; /* no row gap: the counts sit right after the name */
+  font: 500 10px var(--mono);
+  white-space: pre;
+}
+
+.ticker-row .tick-count .plus,
+.diff-head .plus {
+  color: var(--green);
+}
+
+.ticker-row .tick-count .minus,
+.diff-head .minus {
+  color: var(--red);
+}
+
+/* ── Diff card (overview, left card) — DiffCardView ────────────────────── */
+
+.diff-card {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 10px 4px 108px;
+}
+
+.diff-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0 3px;
+  min-width: 0;
+}
+
+.diff-back {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: default;
+}
+
+.diff-back b {
+  font: 600 12px var(--font);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.diff-head .grow {
+  flex: 1 1 auto;
+}
+
+.diff-head .tick-count {
+  flex: 0 0 auto;
+  font: 500 10px var(--mono);
+}
+
+.diff-head .icon-btn {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.diff-note {
+  font: 400 10.5px var(--font);
+  color: var(--dim-3);
+}
+
+.diff-lines {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  user-select: text;
+}
+
+.diff-lines::-webkit-scrollbar {
+  display: none;
+}
+
+.diff-line {
+  display: flex;
+  min-height: 14px; /* an empty line still takes a row */
+  font: 400 10.5px/1.35 var(--mono);
+  color: var(--dim-3);
+}
+
+.diff-line .sym {
+  flex: 0 0 12px;
+  color: #454850;
+}
+
+.diff-line .txt {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.diff-line.added {
+  background: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+}
+
+.diff-line.added .sym {
+  color: var(--green);
+}
+
+.diff-line.removed {
+  background: rgba(244, 80, 94, 0.12);
+  color: #fca5a5;
+}
+
+.diff-line.removed .sym {
+  color: var(--red);
+}
+
+/* Persian sets every line of the island at 1.5; code keeps its own. */
+:root[lang="fa"] #content :is(.diff-line, .diff-line *) {
+  line-height: 1.35;
+}

@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "id": "confluence",
+  "name": "Confluence",
+  "category": "work",
+  "color": "#1868DB",
+  "desc": {
+    "fa": "صفحه‌هایی از Confluence که تازه ویرایش شده‌اند.",
+    "en": "The most recently edited pages in your Confluence site."
+  },
+  "keyUrl": "https://id.atlassian.com/manage-profile/security/api-tokens",
+  "docsUrl": "https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-page/",
+  "fields": [
+    {
+      "name": "site",
+      "kind": "text",
+      "label": { "fa": "نام سایت", "en": "Site name" },
+      "placeholder": "your-team",
+      "optional": false,
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "help": {
+        "fa": "بخش اول آدرس، پیش از ⁨.atlassian.net⁩",
+        "en": "The first part of your address, before .atlassian.net"
+      }
+    },
+    {
+      "name": "email",
+      "kind": "text",
+      "label": { "fa": "ایمیل حساب Atlassian", "en": "Atlassian account email" },
+      "placeholder": "you@company.com",
+      "optional": false,
+      "pattern": "^[^@\\s/:]{1,64}@[^@\\s/:]{1,255}$"
+    },
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API", "en": "API token" },
+      "placeholder": "ATATT…",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9_=\\-]{20,400}$"
+    }
+  ],
+  "auth": [{ "type": "basic", "user": "email", "pass": "token" }],
+  "hosts": ["*.atlassian.net"],
+  "request": {
+    "method": "GET",
+    "url": "https://{field.site}.atlassian.net/wiki/api/v2/pages",
+    "headers": { "Accept": "application/json" },
+    "query": { "sort": "-modified-date", "limit": "10" }
+  },
+  "list": {
+    "path": "/results",
+    "max": 10,
+    "id": "/id",
+    "title": "/title",
+    "url": "https://{field.site}.atlassian.net/wiki/pages/viewpage.action?pageId={item./id}"
+  },
+  "openUrl": "https://{field.site}.atlassian.net/wiki/home",
+  "webHosts": ["*.atlassian.net"],
+  "pollEvery": 600
+}

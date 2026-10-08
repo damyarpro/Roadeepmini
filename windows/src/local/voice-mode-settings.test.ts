@@ -1,0 +1,9 @@
+import {describe,it,expect,vi} from "vitest";
+import {voiceModeSettings} from "./voice-mode-settings";
+import {DEFAULT_SETTINGS,type Settings} from "../core/state";
+import {setLanguage} from "../core/i18n";
+async function flush(){for(let i=0;i<8;i++)await Promise.resolve();}
+describe("admin voice preference",()=>{
+ it("defaults to manual and offers one keyboard radio group",()=>{setLanguage("en");const el=voiceModeSettings({native:true,settings:()=>({...DEFAULT_SETTINGS})});const inputs=[...el.querySelectorAll<HTMLInputElement>("input")];expect(inputs[0].checked).toBe(true);expect(inputs[1].checked).toBe(false);expect(inputs[0].name).toBe(inputs[1].name);expect(el.textContent).toContain("one request");expect(el.querySelector("legend .settings-help-button")).not.toBeNull();expect(el.querySelector(".settings-help-button")!.getAttribute("aria-label")).toContain("More information");});
+ it("saves explicit always opt-in and restores manual on failed persistence",async()=>{setLanguage("en");let settings:Settings={...DEFAULT_SETTINGS};const save=vi.fn(async(mode:"manual"|"always")=>{settings={...settings,adminVoiceMode:mode};});const el=voiceModeSettings({native:true,settings:()=>settings,save});const always=el.querySelector<HTMLInputElement>('input[value="always"]')!;always.checked=true;always.dispatchEvent(new Event("change"));expect(always.disabled).toBe(true);await flush();expect(save).toHaveBeenCalledWith("always");expect(always.checked).toBe(true);const failing=voiceModeSettings({native:true,settings:()=>({...DEFAULT_SETTINGS}),save:async()=>{throw new Error("save failed");}});const choice=failing.querySelector<HTMLInputElement>('input[value="always"]')!;choice.checked=true;choice.dispatchEvent(new Event("change"));await flush();expect(choice.checked).toBe(false);expect(failing.querySelector<HTMLInputElement>('input[value="manual"]')!.checked).toBe(true);expect(failing.textContent).toContain("previous choice was kept");});
+});

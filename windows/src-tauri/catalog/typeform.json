@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "id": "typeform",
+  "name": "Typeform",
+  "category": "marketing",
+  "color": "#8C5AFF",
+  "desc": {
+    "fa": "فرم‌های Typeform، آن‌هایی که تازه ویرایش شده‌اند اول.",
+    "en": "Your Typeform forms, most recently edited first."
+  },
+  "keyUrl": "https://www.typeform.com/developers/get-started/personal-access-token/",
+  "docsUrl": "https://www.typeform.com/developers/create/reference/retrieve-forms/",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن دسترسی شخصی", "en": "Personal access token" },
+      "placeholder": "tfp_…",
+      "optional": false,
+      "pattern": "^tfp_[A-Za-z0-9_\\-]{20,120}$",
+      "help": {
+        "fa": "دامنهٔ ⁨forms:read⁩ کافی است.",
+        "en": "The forms:read scope is enough."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.typeform.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.typeform.com/forms",
+    "query": { "page_size": "20" }
+  },
+  "list": {
+    "path": "/items",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/title",
+    "time": "/last_updated_at"
+  },
+  "count": "/total_items",
+  "openUrl": "https://admin.typeform.com/",
+  "webHosts": ["admin.typeform.com"],
+  "pollEvery": 1800
+}

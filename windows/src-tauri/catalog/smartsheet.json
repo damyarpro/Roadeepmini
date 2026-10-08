@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "id": "smartsheet",
+  "name": "Smartsheet",
+  "category": "work",
+  "color": "#1F6BFF",
+  "desc": {
+    "fa": "شیت‌های Smartsheet، آن‌هایی که تازه تغییر کرده‌اند اول.",
+    "en": "Your Smartsheet sheets, most recently modified first."
+  },
+  "keyUrl": "https://help.smartsheet.com/articles/2482389-generate-API-key",
+  "docsUrl": "https://developers.smartsheet.com/",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن دسترسی API", "en": "API access token" },
+      "placeholder": "26–40 characters",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9]{26,40}$",
+      "help": {
+        "fa": "در ⁨Account → Apps & Integrations → API Access⁩ (حساب‌های آمریکا؛ ⁨smartsheet.eu⁩ پشتیبانی نمی‌شود).",
+        "en": "Account → Apps & Integrations → API Access (US accounts; smartsheet.eu isn't supported)."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.smartsheet.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.smartsheet.com/2.0/sheets",
+    "query": { "pageSize": "50" }
+  },
+  "list": {
+    "path": "/data",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/accessLevel",
+    "time": "/modifiedAt",
+    "url": "{item./permalink|url}"
+  },
+  "count": "/totalCount",
+  "openUrl": "https://app.smartsheet.com/",
+  "webHosts": ["app.smartsheet.com"],
+  "pollEvery": 1800
+}

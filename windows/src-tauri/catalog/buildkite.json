@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "id": "buildkite",
+  "name": "Buildkite",
+  "category": "dev",
+  "color": "#14CC80",
+  "desc": {
+    "fa": "آخرین بیلدهای Buildkite؛ اگر بیلدی شکست بخورد خبرت می‌کند.",
+    "en": "Latest Buildkite builds; tells you when one fails."
+  },
+  "keyUrl": "https://buildkite.com/user/api-access-tokens",
+  "docsUrl": "https://buildkite.com/docs/apis/rest-api/builds",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API", "en": "API access token" },
+      "placeholder": "bkua_…",
+      "optional": false,
+      "pattern": "^(bkua_)?[A-Za-z0-9]{30,80}$",
+      "help": {
+        "fa": "دسترسی ⁨read_builds⁩ کافی است.",
+        "en": "The read_builds scope is enough."
+      }
+    },
+    {
+      "name": "org",
+      "kind": "text",
+      "label": { "fa": "نامک سازمان", "en": "Organization slug" },
+      "placeholder": "my-org",
+      "optional": false,
+      "pattern": "^[a-z0-9][a-z0-9-]{0,99}$",
+      "help": {
+        "fa": "همان بخشی از آدرس که بعد از ⁨buildkite.com/⁩ می‌آید.",
+        "en": "The part of the address after buildkite.com/"
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.buildkite.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.buildkite.com/v2/organizations/{field.org}/builds",
+    "query": { "per_page": "10" }
+  },
+  "list": {
+    "path": "",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/pipeline/name",
+    "subtitle": "/branch",
+    "status": "/state",
+    "time": "/created_at",
+    "url": "{item./web_url|url}"
+  },
+  "statusMap": {
+    "passed": "ok",
+    "failed": "err",
+    "failing": "err",
+    "running": "info",
+    "scheduled": "info",
+    "creating": "info",
+    "blocked": "warn",
+    "canceling": "off",
+    "canceled": "off",
+    "skipped": "off",
+    "not_run": "off",
+    "*": "info"
+  },
+  "openUrl": "https://buildkite.com/{field.org}",
+  "webHosts": ["buildkite.com"],
+  "pollEvery": 60,
+  "notify": { "on": "status", "statuses": ["err"] }
+}

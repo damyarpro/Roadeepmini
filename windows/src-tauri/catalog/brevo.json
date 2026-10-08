@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "id": "brevo",
+  "name": "Brevo",
+  "category": "marketing",
+  "color": "#0B996E",
+  "desc": {
+    "fa": "کمپین‌های ایمیلی Brevo و وضعیت ارسالشان.",
+    "en": "Your Brevo email campaigns and their sending status."
+  },
+  "keyUrl": "https://app.brevo.com/settings/keys/api",
+  "docsUrl": "https://developers.brevo.com/reference",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "xkeysib-…",
+      "optional": false,
+      "pattern": "^xkeysib-[A-Za-z0-9\\-]{20,120}$"
+    }
+  ],
+  "auth": [{ "type": "header", "name": "api-key", "field": "token", "prefix": "" }],
+  "hosts": ["api.brevo.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.brevo.com/v3/emailCampaigns",
+    "headers": { "Accept": "application/json" },
+    "query": { "limit": "10", "sort": "desc" }
+  },
+  "list": {
+    "path": "/campaigns",
+    "max": 10,
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/subject",
+    "status": "/status"
+  },
+  "statusMap": {
+    "sent": "ok",
+    "draft": "info",
+    "queued": "info",
+    "in_process": "info",
+    "suspended": "warn",
+    "archive": "off",
+    "*": "info"
+  },
+  "count": "/count",
+  "openUrl": "https://app.brevo.com/",
+  "webHosts": ["app.brevo.com"],
+  "pollEvery": 900
+}

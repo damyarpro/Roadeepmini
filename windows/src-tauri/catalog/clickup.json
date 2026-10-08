@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "id": "clickup",
+  "name": "ClickUp",
+  "category": "work",
+  "color": "#7B68EE",
+  "desc": {
+    "fa": "کارهای باز فضای کاری ClickUp، تازه‌ترین تغییرها اول.",
+    "en": "Open tasks in your ClickUp workspace, most recently updated first."
+  },
+  "keyUrl": "https://app.clickup.com/settings/apps",
+  "docsUrl": "https://developer.clickup.com/reference/getfilteredteamtasks",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API شخصی", "en": "Personal API token" },
+      "placeholder": "pk_…",
+      "optional": false,
+      "pattern": "^pk_[A-Za-z0-9_]{20,120}$"
+    },
+    {
+      "name": "team",
+      "kind": "text",
+      "label": { "fa": "شناسهٔ فضای کاری", "en": "Workspace ID" },
+      "placeholder": "9012345678",
+      "optional": false,
+      "pattern": "^[0-9]{3,20}$",
+      "help": {
+        "fa": "عدد اول آدرس ClickUp، بعد از ⁨app.clickup.com/⁩",
+        "en": "The first number in your ClickUp address, after app.clickup.com/"
+      }
+    }
+  ],
+  "auth": [{ "type": "header", "name": "Authorization", "field": "token", "prefix": "" }],
+  "hosts": ["api.clickup.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.clickup.com/api/v2/team/{field.team}/task",
+    "headers": { "Accept": "application/json" },
+    "query": { "order_by": "updated", "include_closed": "false", "subtasks": "true" }
+  },
+  "list": {
+    "path": "/tasks",
+    "max": 10,
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/list/name",
+    "status": "/status/status",
+    "url": "https://app.clickup.com/t/{item./id}"
+  },
+  "statusMap": { "complete": "ok", "closed": "ok", "done": "ok", "*": "info" },
+  "openUrl": "https://app.clickup.com/{field.team}/home",
+  "webHosts": ["app.clickup.com"],
+  "pollEvery": 300
+}

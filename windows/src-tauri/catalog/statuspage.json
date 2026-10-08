@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "id": "statuspage",
+  "name": "Statuspage",
+  "category": "monitoring",
+  "color": "#2684FF",
+  "desc": {
+    "fa": "اجزای صفحهٔ وضعیت Statuspage؛ اگر یکی دچار اختلال شود خبرت می‌کند.",
+    "en": "Your Statuspage components; tells you when one is degraded or down."
+  },
+  "keyUrl": "https://developer.statuspage.io/",
+  "docsUrl": "https://developer.statuspage.io/",
+  "fields": [
+    {
+      "name": "apiKey",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "xxxxxxxx-xxxx-…",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9\\-]{30,64}$",
+      "help": {
+        "fa": "در ⁨manage.statuspage.io⁩: عکس پروفایل ← ⁨API info⁩",
+        "en": "In manage.statuspage.io: your avatar → API info"
+      }
+    },
+    {
+      "name": "pageId",
+      "kind": "text",
+      "label": { "fa": "شناسهٔ صفحه", "en": "Page ID" },
+      "placeholder": "abc123def456",
+      "optional": false,
+      "pattern": "^[a-z0-9]{8,20}$",
+      "help": {
+        "fa": "در همان صفحهٔ ⁨API info⁩ کنار نام صفحه آمده.",
+        "en": "Listed next to the page name on the same API info screen."
+      }
+    }
+  ],
+  "auth": [{ "type": "header", "name": "Authorization", "field": "apiKey", "prefix": "OAuth " }],
+  "hosts": ["api.statuspage.io"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.statuspage.io/v1/pages/{field.pageId}/components"
+  },
+  "list": {
+    "path": "",
+    "max": 20,
+    "id": "/id",
+    "title": "/name",
+    "status": "/status",
+    "time": "/updated_at"
+  },
+  "statusMap": {
+    "operational": "ok",
+    "degraded_performance": "warn",
+    "partial_outage": "err",
+    "major_outage": "err",
+    "under_maintenance": "info",
+    "*": "info"
+  },
+  "openUrl": "https://manage.statuspage.io/pages/{field.pageId}",
+  "webHosts": ["manage.statuspage.io"],
+  "pollEvery": 120,
+  "notify": { "on": "status", "statuses": ["warn", "err"] }
+}

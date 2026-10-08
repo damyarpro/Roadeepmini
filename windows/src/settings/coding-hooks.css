@@ -1,0 +1,22 @@
+.coding-hook-list { padding: 0; overflow: hidden; }
+.coding-hook-loading { padding: 16px; margin: 0; color: var(--text-2); }
+.coding-hook-provider + .coding-hook-provider { border-top: 1px solid var(--divider); }
+.coding-hook-summary { min-height: 56px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+.coding-hook-summary:hover { background: var(--surface-hover); }
+.coding-hook-summary:focus-visible { outline: 2px solid var(--primary); outline-offset: -3px; }
+.coding-hook-name { font-weight: 600; }
+.coding-hook-summary > span:nth-child(2) { margin-inline-start: auto; }
+.coding-hook-chevron { font-size: 20px; transition: transform var(--t-fast); }
+.coding-hook-provider[open] > summary .coding-hook-chevron { transform: rotate(180deg); }
+.coding-hook-setup { padding: 0 16px 16px; display: grid; gap: 12px; }
+.coding-hook-meta { display: flex; gap: 8px; align-items: center; color: var(--text-2); }
+.coding-hook-setup .path { overflow-wrap: anywhere; }
+.coding-hook-diff { max-height: 220px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.coding-hook-setup input { width: 100%; box-sizing: border-box; }
+.coding-hook-setup input, .coding-hook-setup .actions button { min-height: 44px; }
+.coding-hook-setup input { border-color: var(--control-edge); }
+.coding-hook-setup input[aria-invalid=true] { border-color: var(--error); }
+.coding-hook-setup .hint { margin: 0; max-width: 60ch; }
+.coding-hook-setup .path { user-select: text; }
+.coding-hook-detection { color: var(--text-2); }
+@media (prefers-reduced-motion: reduce) { .coding-hook-chevron { transition: none; } }

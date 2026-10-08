@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "id": "rollbar",
+  "name": "Rollbar",
+  "category": "monitoring",
+  "color": "#3569F3",
+  "desc": {
+    "fa": "خطاهای فعال یک پروژهٔ Rollbar؛ خطای تازه که بیاید خبرت می‌کند.",
+    "en": "Active errors in a Rollbar project; tells you when a new one appears."
+  },
+  "keyUrl": "https://docs.rollbar.com/docs/access-tokens",
+  "docsUrl": "https://docs.rollbar.com/reference",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن دسترسی پروژه", "en": "Project access token" },
+      "placeholder": "32 hex",
+      "optional": false,
+      "pattern": "^[a-f0-9]{32}$",
+      "help": {
+        "fa": "در تنظیمات پروژه ← ⁨Project Access Tokens⁩، توکنی با دامنهٔ ⁨read⁩",
+        "en": "Project settings → Project Access Tokens, one with the read scope."
+      }
+    }
+  ],
+  "auth": [{ "type": "header", "name": "X-Rollbar-Access-Token", "field": "token", "prefix": "" }],
+  "hosts": ["api.rollbar.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.rollbar.com/api/1/items",
+    "headers": { "Accept": "application/json" },
+    "query": { "status": "active" }
+  },
+  "list": {
+    "path": "/result/items",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/title",
+    "subtitle": "/environment",
+    "status": "/level",
+    "time": "/last_occurrence_timestamp"
+  },
+  "statusMap": {
+    "critical": "err",
+    "error": "err",
+    "warning": "warn",
+    "info": "info",
+    "debug": "info",
+    "50": "err",
+    "40": "err",
+    "30": "warn",
+    "*": "info"
+  },
+  "openUrl": "https://app.rollbar.com/",
+  "webHosts": ["app.rollbar.com"],
+  "pollEvery": 120,
+  "notify": { "on": "new", "statuses": ["err"] }
+}

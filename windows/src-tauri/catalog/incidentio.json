@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "id": "incidentio",
+  "name": "incident.io",
+  "category": "monitoring",
+  "color": "#F25533",
+  "desc": {
+    "fa": "حادثه‌های اخیر incident.io؛ حادثهٔ تازه که اعلام شود خبرت می‌کند.",
+    "en": "Recent incident.io incidents; tells you when a new one is declared."
+  },
+  "keyUrl": "https://app.incident.io/settings/api-keys",
+  "docsUrl": "https://api-docs.incident.io/",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "inc_…",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9_\\-]{20,200}$",
+      "help": {
+        "fa": "فقط دسترسی «دیدن حادثه‌های عمومی» را بده.",
+        "en": "Only grant “View data, like public incidents”."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.incident.io"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.incident.io/v2/incidents",
+    "query": { "page_size": "25" }
+  },
+  "list": {
+    "path": "/incidents",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/reference",
+    "status": "/incident_status/category",
+    "time": "/created_at",
+    "url": "{item./permalink|url}"
+  },
+  "statusMap": {
+    "triage": "warn",
+    "live": "err",
+    "paused": "info",
+    "learning": "ok",
+    "closed": "ok",
+    "declined": "off",
+    "merged": "off",
+    "canceled": "off",
+    "*": "info"
+  },
+  "openUrl": "https://app.incident.io/",
+  "webHosts": ["app.incident.io"],
+  "pollEvery": 60,
+  "notify": { "on": "new", "statuses": ["err", "warn"] }
+}

@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "id": "replicate",
+  "name": "Replicate",
+  "category": "dev",
+  "color": "#EA2805",
+  "desc": {
+    "fa": "آخرین پیش‌بینی‌های Replicate؛ وقتی یکی تمام شود یا شکست بخورد خبرت می‌کند.",
+    "en": "Your latest Replicate predictions; tells you when one finishes or fails."
+  },
+  "keyUrl": "https://replicate.com/account/api-tokens",
+  "docsUrl": "https://replicate.com/docs/reference/http",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API", "en": "API token" },
+      "placeholder": "r8_…",
+      "optional": false,
+      "pattern": "^r8_[A-Za-z0-9]{20,80}$"
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.replicate.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.replicate.com/v1/predictions"
+  },
+  "list": {
+    "path": "/results",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/model",
+    "subtitle": "/source",
+    "status": "/status",
+    "time": "/created_at",
+    "url": "https://replicate.com/p/{item./id}"
+  },
+  "statusMap": {
+    "succeeded": "ok",
+    "starting": "info",
+    "processing": "info",
+    "failed": "err",
+    "canceled": "off",
+    "*": "info"
+  },
+  "openUrl": "https://replicate.com/predictions",
+  "webHosts": ["replicate.com"],
+  "pollEvery": 60,
+  "notify": { "on": "status", "statuses": ["ok", "err"] }
+}

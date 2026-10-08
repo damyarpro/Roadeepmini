@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "id": "coda",
+  "name": "Coda",
+  "category": "work",
+  "color": "#F46A54",
+  "desc": {
+    "fa": "داک‌های Coda، آن‌هایی که تازه ویرایش شده‌اند اول.",
+    "en": "Your Coda docs, most recently edited first."
+  },
+  "keyUrl": "https://coda.io/account",
+  "docsUrl": "https://coda.io/developers/apis/v1",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API", "en": "API token" },
+      "placeholder": "xxxxxxxx-xxxx-…",
+      "optional": false,
+      "pattern": "^[a-f0-9\\-]{36}$",
+      "help": {
+        "fa": "در ⁨Account settings → API settings⁩ یک توکن «فقط خواندن» بساز.",
+        "en": "Create a read-only token in Account settings → API settings."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["coda.io"],
+  "request": {
+    "method": "GET",
+    "url": "https://coda.io/apis/v1/docs",
+    "query": { "limit": "25" }
+  },
+  "list": {
+    "path": "/items",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/ownerName",
+    "time": "/updatedAt",
+    "url": "{item./browserLink|url}"
+  },
+  "openUrl": "https://coda.io/",
+  "webHosts": ["coda.io"],
+  "pollEvery": 1800
+}

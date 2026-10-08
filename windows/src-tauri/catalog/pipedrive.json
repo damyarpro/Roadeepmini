@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "id": "pipedrive",
+  "name": "Pipedrive",
+  "category": "commerce",
+  "color": "#26B67C",
+  "desc": {
+    "fa": "معامله‌های باز Pipedrive، آن‌هایی که تازه تغییر کرده‌اند اول.",
+    "en": "Open Pipedrive deals, most recently updated first."
+  },
+  "keyUrl": "https://app.pipedrive.com/settings/api",
+  "docsUrl": "https://developers.pipedrive.com/docs/api/v1/Deals",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API شخصی", "en": "Personal API token" },
+      "placeholder": "40 hex",
+      "optional": false,
+      "pattern": "^[a-f0-9]{40}$"
+    }
+  ],
+  "auth": [{ "type": "query", "name": "api_token", "field": "token" }],
+  "hosts": ["api.pipedrive.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.pipedrive.com/api/v2/deals",
+    "headers": { "Accept": "application/json" },
+    "query": {
+      "status": "open",
+      "sort_by": "update_time",
+      "sort_direction": "desc",
+      "limit": "10"
+    }
+  },
+  "list": {
+    "path": "/data",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/title",
+    "subtitle": "/value",
+    "time": "/update_time"
+  },
+  "openUrl": "https://app.pipedrive.com/",
+  "webHosts": ["app.pipedrive.com"],
+  "pollEvery": 300
+}

@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "id": "lemonsqueezy",
+  "name": "Lemon Squeezy",
+  "category": "payments",
+  "color": "#7047EB",
+  "desc": {
+    "fa": "سفارش‌های تازهٔ Lemon Squeezy؛ فروش تازه که ثبت شود خبرت می‌کند.",
+    "en": "Latest Lemon Squeezy orders; tells you when a new sale comes in."
+  },
+  "keyUrl": "https://app.lemonsqueezy.com/settings/api",
+  "docsUrl": "https://docs.lemonsqueezy.com/api",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "eyJ0eXAiOi…",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9_.\\-]{100,2000}$"
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.lemonsqueezy.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.lemonsqueezy.com/v1/orders",
+    "headers": { "Accept": "application/vnd.api+json" },
+    "query": { "page[size]": "10" }
+  },
+  "list": {
+    "path": "/data",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/attributes/user_name",
+    "subtitle": "/attributes/total_formatted",
+    "status": "/attributes/status",
+    "time": "/attributes/created_at"
+  },
+  "statusMap": {
+    "paid": "ok",
+    "pending": "info",
+    "partial_refund": "info",
+    "refunded": "off",
+    "failed": "err",
+    "fraudulent": "err",
+    "*": "info"
+  },
+  "count": "/meta/page/total",
+  "openUrl": "https://app.lemonsqueezy.com/orders",
+  "webHosts": ["app.lemonsqueezy.com"],
+  "pollEvery": 300,
+  "notify": { "on": "new", "statuses": ["ok"] }
+}

@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "id": "woocommerce",
+  "name": "WooCommerce",
+  "category": "commerce",
+  "color": "#7F54B3",
+  "desc": {
+    "fa": "سفارش‌های تازهٔ فروشگاه WooCommerce؛ سفارش تازه که بیاید خبرت می‌کند.",
+    "en": "Latest orders in your WooCommerce store; tells you when a new one arrives."
+  },
+  "keyUrl": "https://woocommerce.com/document/woocommerce-rest-api/",
+  "docsUrl": "https://woocommerce.github.io/woocommerce-rest-api-docs/",
+  "fields": [
+    {
+      "name": "siteUrl",
+      "kind": "url",
+      "label": { "fa": "آدرس فروشگاه", "en": "Store address" },
+      "placeholder": "https://shop.example.com",
+      "optional": false,
+      "pattern": "^https://[A-Za-z0-9.\\-]{1,253}(:[0-9]{2,5})?(/[A-Za-z0-9._~\\-/]*)?$"
+    },
+    {
+      "name": "consumerKey",
+      "kind": "secret",
+      "label": { "fa": "Consumer key", "en": "Consumer key" },
+      "placeholder": "ck_…",
+      "optional": false,
+      "pattern": "^ck_[a-f0-9]{40}$",
+      "help": {
+        "fa": "در ⁨WooCommerce → Settings → Advanced → REST API⁩ یک کلید با دسترسی ⁨Read⁩ بساز.",
+        "en": "Create a Read key in WooCommerce → Settings → Advanced → REST API."
+      }
+    },
+    {
+      "name": "consumerSecret",
+      "kind": "secret",
+      "label": { "fa": "Consumer secret", "en": "Consumer secret" },
+      "placeholder": "cs_…",
+      "optional": false,
+      "pattern": "^cs_[a-f0-9]{40}$"
+    }
+  ],
+  "auth": [{ "type": "basic", "user": "consumerKey", "pass": "consumerSecret" }],
+  "hosts": ["{field.siteUrl}"],
+  "request": {
+    "method": "GET",
+    "url": "{field.siteUrl|base}/wp-json/wc/v3/orders",
+    "headers": { "Accept": "application/json" },
+    "query": { "per_page": "10" }
+  },
+  "list": {
+    "path": "",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/number",
+    "subtitle": "/total",
+    "status": "/status",
+    "time": "/date_created_gmt"
+  },
+  "statusMap": {
+    "completed": "ok",
+    "processing": "info",
+    "on-hold": "warn",
+    "pending": "warn",
+    "failed": "err",
+    "cancelled": "off",
+    "refunded": "off",
+    "checkout-draft": "off",
+    "*": "info"
+  },
+  "openUrl": "{field.siteUrl|base}/wp-admin/edit.php?post_type=shop_order",
+  "webHosts": ["{field.siteUrl}"],
+  "pollEvery": 180,
+  "notify": { "on": "new" }
+}

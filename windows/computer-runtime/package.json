@@ -1,0 +1,8 @@
+{
+  "name": "roadeep-computer-runtime",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "dependencies": { "playwright": "1.63.0" },
+  "scripts": { "test": "node --test policy.test.mjs" }
+}

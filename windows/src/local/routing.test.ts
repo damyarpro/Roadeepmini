@@ -1,0 +1,20 @@
+import {describe,it,expect,vi} from "vitest";
+import {boundedHistory,cloudHandoff,localRoute,LocalRouteCancelled} from "./routing";
+const ready={ready:true,enabled:true,phase:"ready",component:"",downloaded:1,total:1,error:null};
+describe("local routing",()=>{
+ it("truncates mixed Unicode at a complete codepoint and normalizes lone surrogates",()=>{
+  const output=boundedHistory([{role:"user",text:"a"+"😀".repeat(2500)+"b"}])[0];
+  expect(output.text).toBe("a"+"😀".repeat(999));expect(new TextEncoder().encode(output.text).length).toBe(3997);
+  const normalized=boundedHistory([{role:"assistant",text:"سلام\ud800 test \udc00 😀"}])[0];
+  expect(normalized.role).toBe("assistant");expect(normalized.text).toBe("سلام\ufffd test \ufffd 😀");
+  for(const character of [...output.text,...normalized.text]){const point=character.codePointAt(0)!;expect(point<0xd800||point>0xdfff).toBe(true);}
+  const encoded=new TextEncoder().encode(JSON.stringify([output,normalized]));expect(JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(encoded))).toEqual([output,normalized]);
+ });
+ it("stops inspecting a large string once the bounded prefix is full",()=>{const prefix="a".repeat(3996)+"😀";const text=prefix+"b".repeat(2000000);const history=boundedHistory([{role:"user",text}]);expect(history[0].text).toBe(prefix);expect(new TextEncoder().encode(history[0].text).length).toBe(4000);});
+ it("bounds Persian history by UTF8 bytes without invalid JSON",()=>{const history=boundedHistory(Array.from({length:15},()=>({role:"user" as const,text:"سلام😀".repeat(1000)})));const encoder=new TextEncoder();expect(history.length).toBeLessThanOrEqual(12);expect(history.every(item=>encoder.encode(item.text).length<=4000)).toBe(true);expect(history.reduce((sum,item)=>sum+encoder.encode(item.text).length,0)).toBeLessThanOrEqual(12000);expect(()=>JSON.parse(JSON.stringify(history))).not.toThrow();});
+ it("hands recent local context to API without altering the user's query",()=>{const history=[{role:"user" as const,text:"نام من امیر است"},{role:"assistant" as const,text:"سلام امیر"}];const query="کد را بررسی کن";const result=cloudHandoff(query,history);expect(result).toContain(query);expect(result).toContain(JSON.stringify(history));expect(result).toContain("untrusted");expect(history[0].text).toBe("نام من امیر است");expect(cloudHandoff(query,[])).toBe(query);});
+ it("routes a simple request locally and forwards only explicit context restrictions",async()=>{const chat=vi.fn(async()=>({route:"local" as const,text:"سلام!",reason:"local-small-task"}));const result=await localRoute({query:"سلام",history:[],forceCloud:false,requestId:"test",cancelled:()=>false,bridge:{status:async()=>ready,chat}});expect(result.route).toBe("local");expect(chat).toHaveBeenCalledWith("سلام",[],false,"test");});
+ it("never begins inference after cancellation during runtime verification",async()=>{let cancelled=false;let resolve:(value:typeof ready)=>void=()=>{};const chat=vi.fn();const operation=localRoute({query:"hello",history:[],forceCloud:false,requestId:"test",cancelled:()=>cancelled,bridge:{status:()=>new Promise(done=>resolve=done),chat}});cancelled=true;resolve(ready);await expect(operation).rejects.toBeInstanceOf(LocalRouteCancelled);expect(chat).not.toHaveBeenCalled();});
+ it("does not turn a cancelled native failure into a cloud handoff",async()=>{let cancelled=false;let fail:(reason:unknown)=>void=()=>{};const chat=vi.fn(()=>new Promise<never>((_,reject)=>fail=reject));const operation=localRoute({query:"hello",history:[],forceCloud:false,requestId:"test",cancelled:()=>cancelled,bridge:{status:async()=>ready,chat}});await Promise.resolve();cancelled=true;fail(new Error("engine failure"));await expect(operation).rejects.toBeInstanceOf(LocalRouteCancelled);});
+ it("falls back visibly when native runtime is missing or fails",async()=>{const chat=vi.fn(async()=>{throw new Error("engine failed");});const result=await localRoute({query:"hello",history:[],forceCloud:false,requestId:"test",cancelled:()=>false,bridge:{status:async()=>ready,chat}});expect(result).toEqual({route:"cloud",text:"",reason:"local-runtime-unavailable"});});
+});

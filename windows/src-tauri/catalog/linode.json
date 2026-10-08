@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "id": "linode",
+  "name": "Linode (Akamai Cloud)",
+  "category": "dev",
+  "color": "#00A95C",
+  "desc": {
+    "fa": "سرورهای Linode و وضعیتشان.",
+    "en": "Your Linode instances and their state."
+  },
+  "keyUrl": "https://cloud.linode.com/profile/tokens",
+  "docsUrl": "https://techdocs.akamai.com/linode-api/reference/get-linode-instances",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن دسترسی شخصی", "en": "Personal access token" },
+      "placeholder": "64 hex",
+      "optional": false,
+      "pattern": "^[a-f0-9]{64}$",
+      "help": {
+        "fa": "فقط دسترسی «خواندن» برای ⁨Linodes⁩ بده.",
+        "en": "Give it Read Only access to Linodes."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.linode.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.linode.com/v4/linode/instances",
+    "query": { "page_size": "25" }
+  },
+  "list": {
+    "path": "/data",
+    "max": 20,
+    "id": "/id",
+    "title": "/label",
+    "subtitle": "/region",
+    "status": "/status",
+    "url": "https://cloud.linode.com/linodes/{item./id}"
+  },
+  "statusMap": { "running": "ok", "offline": "off", "stopped": "off", "*": "info" },
+  "count": "/results",
+  "openUrl": "https://cloud.linode.com/linodes",
+  "webHosts": ["cloud.linode.com"],
+  "pollEvery": 300
+}

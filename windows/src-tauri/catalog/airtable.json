@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "id": "airtable",
+  "name": "Airtable",
+  "category": "work",
+  "color": "#18BFFF",
+  "desc": {
+    "fa": "پایگاه‌های Airtable که به آن‌ها دسترسی داری، با یک کلیک باز می‌شوند.",
+    "en": "The Airtable bases you can access, one click away."
+  },
+  "keyUrl": "https://airtable.com/create/tokens",
+  "docsUrl": "https://airtable.com/developers/web/api/list-bases",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن دسترسی شخصی", "en": "Personal access token" },
+      "placeholder": "pat…",
+      "optional": false,
+      "pattern": "^pat[A-Za-z0-9]{14}\\.[a-f0-9]{64}$",
+      "help": {
+        "fa": "دسترسی ⁨schema.bases:read⁩ کافی است.",
+        "en": "The schema.bases:read scope is enough."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.airtable.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.airtable.com/v0/meta/bases"
+  },
+  "list": {
+    "path": "/bases",
+    "max": 20,
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/permissionLevel",
+    "url": "https://airtable.com/{item./id}"
+  },
+  "openUrl": "https://airtable.com/",
+  "webHosts": ["airtable.com"],
+  "pollEvery": 1800
+}

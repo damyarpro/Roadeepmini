@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Roadeep — آزمایش کاراکتر</title>
+    <link rel="stylesheet" href="../src/assets/fonts/vazirmatn.css" />
+    <style>
+      :root { color-scheme: dark; --ink: #f5f6f8; --dim: #9398a1; --card: #141518; --sky: #38bdf8; --edge: #3b4048; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #0e0f11; color: var(--ink); font: 14px/1.8 Vazirmatn, system-ui, sans-serif; }
+      main { width: min(1100px, calc(100% - 32px)); margin: 32px auto; }
+      header { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; }
+      h1 { margin: 0; font-size: 24px; font-weight: 600; }
+      h2 { font-size: 16px; margin: 0 0 12px; font-weight: 500; }
+      p { margin: 4px 0 20px; color: var(--dim); }
+      .brand { font: 600 16px system-ui; color: var(--sky); }
+      .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 20px 0; }
+      label { display: flex; gap: 8px; align-items: center; min-height: 44px; cursor: pointer; }
+      button, select { background: #1d1f23; color: var(--ink); border: 1px solid var(--edge); border-radius: 8px; font: inherit; padding: 8px 12px; min-height: 44px; }
+      button { cursor: pointer; }
+      button:hover, select:hover { border-color: var(--sky); }
+      button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--sky); outline-offset: 3px; }
+      button[aria-pressed="true"] { border-color: var(--sky); color: var(--sky); }
+      input { accent-color: var(--sky); width: 18px; height: 18px; }
+      .feature { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+      .panel { background: var(--card); border: 1px solid #272a30; border-radius: 12px; padding: 20px; }
+      .stage { height: 260px; display: grid; place-items: center; background: #000; border-radius: 8px; }
+      .sizes { height: 260px; display: flex; align-items: center; justify-content: space-around; gap: 12px; background: #000; border-radius: 8px; }
+      figure { margin: 0; text-align: center; }
+      figcaption, .hint { color: var(--dim); font-size: 12px; }
+      canvas { display: block; margin: 0 auto; }
+      .board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 12px; }
+      .state-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; border-radius: 12px; background: #000; border: 1px solid #272a30; }
+      .state-card strong { font-weight: 500; }
+      .state-card span { color: var(--dim); font-size: 12px; font-family: Consolas, monospace; }
+      .footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 16px; color: var(--dim); font-size: 12px; }
+      #error { color: #ff8d97; }
+      @media (max-width: 760px) { .feature { grid-template-columns: 1fr; } .board { grid-template-columns: repeat(3, 1fr); } }
+      @media (max-width: 480px) { main { width: calc(100% - 24px); } .board { grid-template-columns: repeat(2, 1fr); } }
+      @media (prefers-color-scheme: light) { :root { color-scheme: light; --ink: #17191e; --dim: #59616d; --card: #fff; --sky: #0369a1; --edge: #b8bec7; } body { background: #f1f2f4; } .panel { border-color: #d5d8dd; } button, select { background: #fff; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header><h1>کاراکتر bloub</h1><span class="brand" dir="ltr">Roadeep</span></header>
+      <p>چهارده وضعیت bloub، نگاشت وضعیت‌های اپ، حالت‌های چهره و ظاهر. فقط برای بررسی توسعه؛ صدا خاموش است.</p>
+      <div class="controls" aria-label="ظاهر">
+        <label>فرم <select id="shape"></select></label>
+        <label>رنگ <select id="color"></select></label>
+        <label>حالت چهره <select id="expression"></select></label>
+        <label>حرکت چشم <select id="eyes"><option value="normal">عادی</option><option value="calm">آرام</option><option value="still">ثابت</option></select></label>
+        <label><input id="reduced" type="checkbox" /> حرکت کمتر</label>
+      </div>
+      <div class="feature">
+        <section class="panel" aria-labelledby="hero-title"><h2 id="hero-title">کاراکتر جزیره</h2><div class="stage" id="hero"></div></section>
+        <section class="panel" aria-labelledby="native-title"><h2 id="native-title">در اندازه‌های واقعی اپ · قطر پایه</h2><div class="sizes" id="native"></div></section>
+      </div>
+      <div class="controls" aria-label="رفتار">
+        <label>وضعیت اپ <select id="context"></select></label>
+        <label>حالت لحظه‌ای <select id="emote"><option value="">—</option><option value="happy">خوشحال</option><option value="surprised">متعجب</option><option value="proud">مفتخر</option><option value="annoyed">ناراحت</option><option value="wink">چشمک</option><option value="love">علاقه</option><option value="yawn">خمیازه</option></select></label>
+        <button id="arrive" type="button">ورود</button>
+        <button id="celebrate" type="button">جشن</button>
+        <button id="slap" type="button">ضربه</button>
+        <button id="mailbox" type="button" aria-pressed="false">صندوق فایل</button>
+      </div>
+      <section class="panel" aria-labelledby="board-title">
+        <h2 id="board-title">تختهٔ چهارده وضعیت</h2>
+        <div class="board" id="board"></div>
+      </section>
+      <div class="footer"><span>نشانی: <span dir="ltr">?shape=nuage&amp;color=violet&amp;expression=curieux&amp;state=thinking</span></span><output id="clock" dir="ltr">0.00 s</output></div>
+      <p id="error" role="alert" hidden></p>
+    </main>
+    <script type="module" src="./character-preview.ts"></script>
+  </body>
+</html>

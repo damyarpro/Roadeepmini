@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "id": "neon",
+  "name": "Neon",
+  "category": "dev",
+  "color": "#00E599",
+  "desc": {
+    "fa": "پروژه‌های پایگاه‌دادهٔ Neon، آن‌هایی که تازه تغییر کرده‌اند اول.",
+    "en": "Your Neon Postgres projects, most recently updated first."
+  },
+  "keyUrl": "https://console.neon.tech/app/settings/api-keys",
+  "docsUrl": "https://neon.tech/docs/reference/api-reference",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "napi_…",
+      "optional": false,
+      "pattern": "^(napi_)?[A-Za-z0-9]{30,120}$",
+      "help": {
+        "fa": "کلید شخصی پروژه‌های حساب خودت را نشان می‌دهد؛ برای سازمان، کلید سازمان بساز.",
+        "en": "A personal key shows your own projects; for an organization, use an org key."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["console.neon.tech"],
+  "request": {
+    "method": "GET",
+    "url": "https://console.neon.tech/api/v2/projects",
+    "headers": { "Accept": "application/json" },
+    "query": { "limit": "20" }
+  },
+  "list": {
+    "path": "/projects",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/region_id",
+    "time": "/updated_at",
+    "url": "https://console.neon.tech/app/projects/{item./id}"
+  },
+  "openUrl": "https://console.neon.tech/app/projects",
+  "webHosts": ["console.neon.tech"],
+  "pollEvery": 900
+}

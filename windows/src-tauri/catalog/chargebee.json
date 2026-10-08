@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "id": "chargebee",
+  "name": "Chargebee",
+  "category": "payments",
+  "color": "#FF7846",
+  "desc": {
+    "fa": "اشتراک‌های تازهٔ Chargebee؛ اشتراک تازه که ثبت شود خبرت می‌کند.",
+    "en": "Newest Chargebee subscriptions; tells you when a new one starts."
+  },
+  "keyUrl": "https://www.chargebee.com/docs/2.0/api_keys.html",
+  "docsUrl": "https://apidocs.chargebee.com/docs/api/subscriptions",
+  "fields": [
+    {
+      "name": "site",
+      "kind": "text",
+      "label": { "fa": "نام سایت", "en": "Site name" },
+      "placeholder": "acme",
+      "optional": false,
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "help": {
+        "fa": "بخش اول آدرس، پیش از ⁨.chargebee.com⁩ (برای سایت آزمایشی معمولاً با ⁨-test⁩ تمام می‌شود).",
+        "en": "The first part of the address, before .chargebee.com (test sites usually end in -test)."
+      }
+    },
+    {
+      "name": "apiKey",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "live_…",
+      "optional": false,
+      "pattern": "^(live|test)_[A-Za-z0-9]{20,64}$",
+      "help": {
+        "fa": "یک کلید «فقط خواندن» در ⁨Settings → Configure Chargebee → API Keys⁩ بساز.",
+        "en": "Create a read-only key in Settings → Configure Chargebee → API Keys."
+      }
+    }
+  ],
+  "auth": [{ "type": "basic", "user": "apiKey" }],
+  "hosts": ["*.chargebee.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://{field.site}.chargebee.com/api/v2/subscriptions",
+    "headers": { "Accept": "application/json" },
+    "query": { "limit": "10", "sort_by[desc]": "created_at" }
+  },
+  "list": {
+    "path": "/list",
+    "max": 10,
+    "sort": "time",
+    "id": "/subscription/id",
+    "title": "/customer/email",
+    "subtitle": "/subscription/id",
+    "status": "/subscription/status",
+    "time": "/subscription/created_at"
+  },
+  "statusMap": {
+    "active": "ok",
+    "in_trial": "info",
+    "future": "info",
+    "non_renewing": "warn",
+    "paused": "off",
+    "cancelled": "off",
+    "*": "info"
+  },
+  "openUrl": "https://{field.site}.chargebee.com/",
+  "webHosts": ["*.chargebee.com"],
+  "pollEvery": 300,
+  "notify": { "on": "new" }
+}

@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "id": "webflow",
+  "name": "Webflow",
+  "category": "content",
+  "color": "#146EF5",
+  "desc": {
+    "fa": "سایت‌های Webflow و آخرین باری که منتشر شده‌اند.",
+    "en": "Your Webflow sites and when each was last published."
+  },
+  "keyUrl": "https://developers.webflow.com/data/reference/authentication/site-token",
+  "docsUrl": "https://developers.webflow.com/data/reference",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API سایت", "en": "Site API token" },
+      "placeholder": "64 hex",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9]{40,80}$",
+      "help": {
+        "fa": "در تنظیمات سایت: ⁨Apps & integrations → API access⁩، با دسترسی خواندن ⁨Sites⁩",
+        "en": "In site settings: Apps & integrations → API access, with read access to Sites."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.webflow.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.webflow.com/v2/sites",
+    "headers": { "Accept": "application/json" }
+  },
+  "list": {
+    "path": "/sites",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/displayName",
+    "subtitle": "/shortName",
+    "time": "/lastPublished"
+  },
+  "openUrl": "https://webflow.com/dashboard",
+  "webHosts": ["webflow.com"],
+  "pollEvery": 900
+}

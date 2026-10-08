@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "id": "datadog",
+  "name": "Datadog",
+  "category": "monitoring",
+  "color": "#632CA6",
+  "desc": {
+    "fa": "مانیتورهای Datadog که در هشدارند؛ هشدار تازه که بیاید خبرت می‌کند.",
+    "en": "Datadog monitors in Alert or Warn; tells you when a new alert fires."
+  },
+  "keyUrl": "https://docs.datadoghq.com/account_management/api-app-keys/",
+  "docsUrl": "https://docs.datadoghq.com/api/latest/monitors/",
+  "fields": [
+    {
+      "name": "apiKey",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "32 hex",
+      "optional": false,
+      "pattern": "^[a-f0-9]{32}$"
+    },
+    {
+      "name": "appKey",
+      "kind": "secret",
+      "label": { "fa": "کلید Application", "en": "Application key" },
+      "placeholder": "40 hex",
+      "optional": false,
+      "pattern": "^[a-f0-9]{40}$",
+      "help": {
+        "fa": "اگر می‌توانی، دامنه‌اش را به ⁨monitors_read⁩ محدود کن.",
+        "en": "If you can, scope it to monitors_read."
+      }
+    },
+    {
+      "name": "site",
+      "kind": "text",
+      "label": { "fa": "سایت Datadog", "en": "Datadog site" },
+      "placeholder": "datadoghq.com",
+      "optional": false,
+      "pattern": "^(datadoghq\\.com|datadoghq\\.eu|us3\\.datadoghq\\.com|us5\\.datadoghq\\.com|ap1\\.datadoghq\\.com|ap2\\.datadoghq\\.com|ddog-gov\\.com)$",
+      "help": {
+        "fa": "دامنهٔ حسابت: ⁨datadoghq.com⁩، ⁨datadoghq.eu⁩، ⁨us3.datadoghq.com⁩، ⁨us5.datadoghq.com⁩، ⁨ap1.datadoghq.com⁩ …",
+        "en": "Your account's domain: datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, ap1.datadoghq.com…"
+      }
+    }
+  ],
+  "auth": [
+    { "type": "header", "name": "DD-API-KEY", "field": "apiKey", "prefix": "" },
+    { "type": "header", "name": "DD-APPLICATION-KEY", "field": "appKey", "prefix": "" }
+  ],
+  "hosts": [
+    "api.datadoghq.com",
+    "api.datadoghq.eu",
+    "api.us3.datadoghq.com",
+    "api.us5.datadoghq.com",
+    "api.ap1.datadoghq.com",
+    "api.ap2.datadoghq.com",
+    "api.ddog-gov.com"
+  ],
+  "request": {
+    "method": "GET",
+    "url": "https://api.{field.site}/api/v1/monitor/search",
+    "headers": { "Accept": "application/json" },
+    "query": { "query": "status:(alert OR warn)", "per_page": "20" }
+  },
+  "list": {
+    "path": "/monitors",
+    "max": 20,
+    "sort": "time",
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/type",
+    "status": "/status",
+    "time": "/last_triggered_ts"
+  },
+  "statusMap": {
+    "Alert": "err",
+    "Warn": "warn",
+    "No Data": "warn",
+    "OK": "ok",
+    "Ignored": "off",
+    "Skipped": "off",
+    "*": "info"
+  },
+  "count": "/metadata/total_count",
+  "pollEvery": 60,
+  "notify": { "on": "new", "statuses": ["err"] }
+}

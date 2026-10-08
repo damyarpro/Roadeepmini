@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "id": "monday",
+  "name": "monday.com",
+  "category": "work",
+  "color": "#6161FF",
+  "desc": {
+    "fa": "بُردهای فعال monday.com، آن‌هایی که اخیراً باز کرده‌ای اول.",
+    "en": "Your active monday.com boards, most recently used first."
+  },
+  "keyUrl": "https://developer.monday.com/api-reference/docs/authentication",
+  "docsUrl": "https://developer.monday.com/api-reference/reference/boards",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API شخصی", "en": "Personal API token" },
+      "placeholder": "eyJhbGciOi…",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9_\\-]{10,600}\\.[A-Za-z0-9_\\-]{10,1500}\\.[A-Za-z0-9_\\-]{10,600}$",
+      "help": {
+        "fa": "در monday.com: عکس پروفایل ← ⁨Developers → My access tokens⁩",
+        "en": "In monday.com: your avatar → Developers → My access tokens"
+      }
+    }
+  ],
+  "auth": [{ "type": "header", "name": "Authorization", "field": "token", "prefix": "" }],
+  "hosts": ["api.monday.com"],
+  "request": {
+    "method": "POST",
+    "url": "https://api.monday.com/v2",
+    "headers": { "Accept": "application/json", "Content-Type": "application/json" },
+    "body": {
+      "query": "{ boards(limit: 10, state: active, order_by: used_at) { id name updated_at workspace { name } } }"
+    }
+  },
+  "list": {
+    "path": "/data/boards",
+    "max": 10,
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/workspace/name",
+    "time": "/updated_at"
+  },
+  "openUrl": "https://monday.com/",
+  "webHosts": ["monday.com"],
+  "pollEvery": 600
+}

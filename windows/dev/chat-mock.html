@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="fa">
+  <head>
+    <meta charset="utf-8" />
+    <title>Roadeep — island chat mock</title>
+    <!--
+      Dev-only: the island with a fake Tauri bridge, to check the chat (streamed
+      markdown, tool approvals, history, balance, out-of-credit) without Rust.
+      Open http://localhost:1420/dev/chat-mock.html?lang=fa (or en).
+      Prompts containing "tool"/"ابزار" ask for an approval; "credit"/"اعتبار"
+      fail with INSUFFICIENT_CREDITS; "memory"/"حافظه" fail with AGENT_MEMORY_TRIGGER;
+      "slow" streams for ~10 s.
+    -->
+    <style>
+      html, body { background: #2a2c31 !important; }
+      #root { position: fixed !important; inset: auto !important; left: 0 !important; top: 0 !important;
+        width: 720px !important; height: 480px !important; outline: 1px dashed #555; }
+      #mock-panel { position: fixed; left: 0; top: 490px; width: 720px; display: flex; flex-wrap: wrap; gap: 6px;
+        font: 12px system-ui; color: #ddd; direction: ltr; }
+      #mock-panel button { font: 12px system-ui; padding: 4px 8px; }
+    </style>
+    <script>
+      (() => {
+        const params = new URLSearchParams(location.search);
+        const lang = params.get("lang") === "en" ? "en" : "fa";
+        const fa = lang === "fa";
+        const voiceMode=params.get("voice")==="1";
+        const localMode=params.get("local")==="1"||voiceMode;
+        let voiceScene="success",voiceQuery="open This PC",syntheticPending=false,voiceProposal=null,proposalSequence=0,voiceSaved=0;
+        const voiceNotice=text=>{const output=document.querySelector("#mock-voice-result");if(output)output.textContent=text;};
+        const localCancelled=new Set();
+        if(localMode)Object.defineProperty(navigator,"mediaDevices",{value:{getUserMedia:async()=>{throw new DOMException("Preview disables microphone","NotAllowedError");}},configurable:true});
+        if(voiceMode){
+          // Dev-only synthetic PCM. No browser microphone permission, network or speaker playback.
+          Object.defineProperty(navigator,"mediaDevices",{value:{getUserMedia:async()=>({getTracks:()=>[{stop(){}}]})},configurable:true});
+          window.AudioContext=class{
+            sampleRate=16000;state="running";destination={};timer;
+            async resume(){} async close(){this.state="closed";clearInterval(this.timer);}
+            createMediaStreamSource(){return{connect(){},disconnect(){}};}
+            createScriptProcessor(){let frame=0;const processor={onaudioprocess:null,disconnect:()=>clearInterval(this.timer),connect:()=>{this.timer=setInterval(()=>{if(!processor.onaudioprocess)return;const value=syntheticPending&&frame<8 ? .05 : 0;const samples=new Float32Array(4096).fill(value);frame++;processor.onaudioprocess({inputBuffer:{getChannelData:()=>samples}});if(frame===12)syntheticPending=false;},50);}};return processor;}
+          };
+          window.Audio=class{src="";onended=null;onerror=null;async play(){setTimeout(()=>{this.onended?.();if(["success","failure","blocked"].includes(voiceScene))setTimeout(()=>window.__mockVoiceEnd?.(),100);},100);}pause(){}removeAttribute(){}load(){}};
+        }
+        const callbacks = new Map();
+        const listeners = new Map();
+        let nextCb = 1;
+        const emit = (event, payload) => {
+          for (const id of listeners.get(event) ?? []) callbacks.get(id)?.({ event, id, payload });
+        };
+        const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+        const err = (code, message, status = null) => ({ code, message, status, retryAfter: null, requestId: "mock-req" });
+
+        const REPLY_FA = [
+          "## خلاصهٔ پاسخ",
+          "",
+          "این یک پاسخ **آزمایشی** است که به‌صورت *زنده* می‌رسد. برای جزئیات به [مستندات رودیپ](https://roadeep.com/docs) سر بزن.",
+          "",
+          "- مورد اول با `inline code`",
+          "- مورد دوم",
+          "  - زیرمورد English text",
+          "",
+          "> نکته: متن مخلوط English و فارسی باید درست نمایش داده شود.",
+          "",
+          "```python",
+          "def greet(name):",
+          "    return f\"سلام {name}! This line is deliberately long so that the code block has to scroll sideways.\"",
+          "```",
+          "",
+          "| مدل | سرعت | هزینه |",
+          "|---|---|---|",
+          "| GPT-4o | سریع | ۱۰ توکن |",
+          "| Claude | خیلی سریع | ۸ توکن |",
+          "",
+          "پایان پاسخ ~~قدیمی~~ جدید.",
+        ].join("\n");
+        const REPLY_EN = [
+          "## Summary",
+          "",
+          "This is a **test** reply that arrives *live*. See the [Roadeep docs](https://roadeep.com/docs) for more.",
+          "",
+          "1. First item with `inline code`",
+          "2. Second item",
+          "   - nested بخش فارسی",
+          "",
+          "> Note: mixed English and فارسی must render correctly.",
+          "",
+          "```ts",
+          "const reply = await Bridge.chatSend(query, null, null, turn); // a deliberately long line that has to scroll",
+          "```",
+          "",
+          "| Model | Speed | Cost |",
+          "|---|---|---|",
+          "| GPT-4o | fast | 10 tokens |",
+          "| Claude | very fast | 8 tokens |",
+          "",
+          "End of the ~~old~~ new reply.",
+        ].join("\n");
+
+        const now = Date.now();
+        let threads = Array.from({ length: 27 }, (_, i) => ({
+          id: `t${i + 1}`,
+          // Row 1 is always Latin and row 2 always Persian, whatever the UI language.
+          title: i === 0 ? "Weekly report — Q3 roadmap (draft)" : i === 1 ? "گزارش هفتگی دربارهٔ برنامهٔ فصل سوم"
+            : i === 2 ? "" : fa ? `گفتگو دربارهٔ موضوع شمارهٔ ${i + 1}` : `Conversation about topic ${i + 1}`,
+          preview: fa ? "آخرین پیام این گفتگو که ممکن است خیلی طولانی باشد و باید کوتاه شود…" : "The last message of this chat, which can be quite long and must be truncated…",
+          updatedAt: new Date(now - i * 47 * 60 * 1000).toISOString(),
+          model: i % 3 === 0 ? null : i % 3 === 1 ? "gpt-4o-mini" : "claude-sonnet-4",
+        }));
+        let failThreadsOnce = params.get("histfail") === "1";
+        let pendingSend = null;
+        let approvalWaiter = null;
+        let balance = { units: params.get("units") != null ? Number(params.get("units")) : 42850, plan: "Pro" };
+
+        async function streamReply(turn, text, slow) {
+          emit("chat-stream", { turn, kind: "status", status: "thinking", label: null });
+          await wait(slow ? 1500 : 500);
+          emit("chat-stream", { turn, kind: "status", status: "searching", label: fa ? "جست‌وجو: قیمت مدل‌ها" : "search: model prices" });
+          await wait(slow ? 1500 : 600);
+          emit("chat-stream", { turn, kind: "status", status: "generating", label: null });
+          const step = slow ? 6 : 14;
+          for (let n = step; n < text.length + step; n += step) {
+            if (pendingSend?.turn !== turn) return;
+            emit("chat-stream", { turn, kind: "delta", text: text.slice(0, n) });
+            await wait(slow ? 60 : 30);
+          }
+        }
+
+        async function chatSend({ query, turn, voiceTask }) {
+          if(voiceMode&&voiceScene==="blocked"){
+            voiceNotice(`Preview only · voiceTask=${voiceTask} · blocked request`);
+            if(!voiceTask)throw err("UNKNOWN","Fixture expected restricted voice task");
+            throw err("voice-sensitive-action-blocked","Sensitive voice action blocked");
+          }
+          const q = String(query);
+          return new Promise(async (resolve, reject) => {
+            pendingSend = { turn, reject };
+            try {
+              if (/credit|اعتبار/i.test(q)) {
+                await wait(600);
+                throw err("INSUFFICIENT_CREDITS", "Insufficient credits", 402);
+              }
+              if (/memory|حافظه/i.test(q)) {
+                await wait(900);
+                throw { ...err("AGENT_MEMORY_TRIGGER", "Roadeep read this agent's instructions as a request to save to memory and did not answer."),
+                  agentName: fa ? "ویراستار ایمیل" : "Email editor" };
+              }
+              if (/tool|ابزار/i.test(q)) {
+                emit("chat-stream", { turn, kind: "status", status: "tool", label: "web_fetch" });
+                await wait(600);
+                emit("chat-stream", { turn, kind: "approval", approval: { id: "ap1", tool: "web_fetch", summary: /long|طولانی/i.test(q)
+                  ? "curl -X POST 'https://api.example.com/v1/generations?model=flux-pro&size=1024x1024' -H 'Content-Type: application/json' --data '{\"prompt\": \"a very long prompt that goes on and on to check wrapping inside the approval card\", \"steps\": 40, \"seed\": 1234567, \"guidance\": 7.5, \"negative\": \"blurry, low quality, watermark, text\"}' && echo done" + Array.from({ length: 12 }, (_, n) => `\ncp ./build/part-${n + 1}.bin /srv/releases/current/ && chmod 644 /srv/releases/current/part-${n + 1}.bin`).join("") + "\nrm -rf /tmp/cache/*"
+                  : "GET https://api.example.com/v1/prices?currency=IRR&limit=50" } });
+                const decision = await new Promise((r) => (approvalWaiter = r));
+                emit("chat-stream", { turn, kind: "approvalDone", approvalId: "ap1", decision });
+              }
+              const text = fa ? REPLY_FA : REPLY_EN;
+              await streamReply(turn, text, /slow/i.test(q));
+              if (pendingSend?.turn !== turn) return;
+              pendingSend = null;
+              balance = { ...balance, units: Math.max(0, balance.units - 37) };
+              emit("roadeep-balance", balance);
+              resolve({ text, threadId: "t-current", messageId: "m1" });
+            } catch (e) {
+              pendingSend = null;
+              reject(e);
+            }
+          });
+        }
+
+        const handlers = {
+          boot: () => ({
+            settings: { language: lang, soundEnabled: false, autoCloseInterval: 600, adminVoiceMode:params.get("mode")==="always"?"always":"manual", activeIntegrations: [], chatAgent: params.get("agent") === "1" ? "a1" : null },
+            screen: { x: 0, y: 0, width: 1440, height: 900, scale: 1 }, version: "mock", hookPath: "",
+          }),
+          roadeep_session: () => ({ signedIn: params.get("signedout") !== "1", user: { id: "u1", name: "Amir", email: null, phone: null, avatar: null }, reason: null }),
+          local_runtime_status: async()=>{await wait(150);return{ready:localMode,enabled:localMode,phase:localMode?"ready":"not-installed",component:"",downloaded:localMode?1618154256:0,total:1618154256,error:null};},
+          local_brain_chat:async({query,forceCloud,requestId})=>{await wait(700);if(localCancelled.has(requestId))throw "local-cancelled";return voiceMode&&voiceScene==="blocked"||forceCloud||/کد|فایل|بررسی پروژه|code|file/i.test(query)?{route:"cloud",text:"",reason:"tools-or-current-information"}:{route:"local",text:fa?"سلام امیر! این یک پاسخ آزمایشی از مغز داخلی است. کارهای کوتاه روی همین سیستم انجام می‌شوند.":"Hello! This is a preview local reply. Short requests run on this PC.",reason:"local-small-task"};},
+          voice_assistant_analyze:async()=>{
+            await wait(150);
+            if(voiceScene==="ambient")return{route:"silent",text:""};
+            if(voiceScene==="yes"||voiceScene==="no"){if(!voiceProposal)throw "voice-proposal-missing";return{route:"done",...(await handlers.voice_proposal_decide({id:voiceProposal.id,accept:voiceScene==="yes"}))};}
+            if(voiceScene==="task"||voiceScene==="note"){
+              if(!voiceProposal)voiceProposal={id:`preview-${++proposalSequence}`,kind:voiceScene,text:voiceScene==="task"?(fa?"گزارش هفتگی را آماده کنم":"Prepare the weekly report"):(fa?"ایدهٔ جلسه را یادداشت کنم":"Remember the meeting idea")};
+              emit("voice-proposal-changed",{proposal:voiceProposal});return{route:"proposal",text:fa?"پیش‌نمایش: این پیشنهاد ثبت شود؟ هنوز چیزی ذخیره نشده است.":"Preview: Save this proposal? Nothing has been saved yet.",proposal:voiceProposal};
+            }
+            return{route:"chat",text:""};
+          },
+          voice_proposal_pending:()=>({proposal:voiceProposal}),
+          voice_proposal_clear:()=>{voiceProposal=null;emit("voice-proposal-changed",{proposal:null});},
+          voice_proposal_decide:async({id,accept})=>{if(!voiceProposal||voiceProposal.id!==id)throw "voice-proposal-missing";if(accept)voiceSaved++;voiceProposal=null;emit("voice-proposal-changed",{proposal:null});return{text:fa?(accept?"پیش‌نمایش: پیشنهاد ثبت شد.":"پیش‌نمایش: پیشنهاد ثبت نشد."):(accept?"Preview: proposal saved.":"Preview: proposal not saved.")};},
+          desktop_voice_try:async()=>{await wait(200);if(!voiceMode)return{handled:false,text:""};if(voiceScene==="failure")throw "desktop-launch-failed";return voiceScene==="success"?{handled:true,text:fa?"پیش‌نمایش: پنجرهٔ این سیستم باز شد.":"Preview: This PC opened.",action:"this_pc"}:{handled:false,text:""};},
+          speaker_status:()=>({enrolled:voiceMode,enrolling:false}),
+          speaker_verify:()=>({matched:true,score:1,ticket:"preview-ticket"}),
+          local_speech_transcribe:()=>({text:voiceQuery}),
+          local_speech_speak:({text})=>{voiceNotice((fa?"فقط پیش‌نمایش · پاسخ گفتاری ساختگی: ":"Preview only · simulated spoken reply: ")+text);const bytes=new Uint8Array(44);for(const[at,label]of[[0,"RIFF"],[8,"WAVE"]])for(let i=0;i<label.length;i++)bytes[at+i]=label.charCodeAt(i);return{wavBase64:btoa(String.fromCharCode(...bytes))};},
+          local_brain_cancel:({requestId})=>{if(requestId)localCancelled.add(requestId);},
+          voice_status:()=>({configured:false,model:"gpt-realtime-2.1",voice:"marin"}),
+          computer_status:()=>({available:false,state:"unavailable",agentId:"default",takeover:false,error:"computer-docker-unavailable"}),
+          local_agents_list: () => [],
+          roadeep_agent_catalog: () => ({ exclusive: [], public: [{ id: "a1", title: fa ? "نویسنده" : "Writer", shortDescription: null, iconUrl: null, starterPrompts: fa ? ["یک ایمیل رسمی بنویس", "این متن را خلاصه کن", "Translate to English"] : ["Write a formal email", "Summarise this text", "به فارسی ترجمه کن"], visibility: "public" }] }),
+          roadeep_balance: () => balance,
+          chat_send: chatSend,
+          chat_cancel: () => {
+            if (pendingSend) {
+              pendingSend.reject(err("CANCELLED", "cancelled"));
+              pendingSend = null;
+            }
+          },
+          chat_reset: () => null,
+          chat_turn_state: () => ({ busy: !!pendingSend, turn: pendingSend?.turn ?? null }),
+          chat_approval_decide: async ({ approvalId, decision }) => {
+            await wait(params.get("slowdecide") === "1" ? 6000 : 500);
+            if (!approvalWaiter) throw err("APPROVAL_ALREADY_DECIDED", "already decided");
+            const w = approvalWaiter;
+            approvalWaiter = null;
+            w(decision);
+          },
+          chat_threads: async ({ offset, limit }) => {
+            await wait(400);
+            if (failThreadsOnce) {
+              failThreadsOnce = false;
+              throw err("NETWORK_ERROR", "offline");
+            }
+            if (params.get("histempty") === "1") return { items: [], hasMore: false };
+            return { items: threads.slice(offset, offset + limit), hasMore: offset + limit < threads.length };
+          },
+          chat_thread_open: async ({ threadId }) => {
+            await wait(300);
+            const th = threads.find((t) => t.id === threadId);
+            if (!th) throw err("THREAD_NOT_FOUND", "gone", 404);
+            return {
+              id: th.id, title: th.title,
+              messages: [
+                { id: "1", role: "user", text: fa ? "سلام، یک جدول از مدل‌ها بده" : "Hi, give me a table of models", createdAt: th.updatedAt },
+                { id: "2", role: "assistant", text: fa ? REPLY_FA : REPLY_EN, createdAt: th.updatedAt },
+              ],
+            };
+          },
+          chat_thread_delete: async ({ threadId }) => {
+            await wait(400);
+            threads = threads.filter((t) => t.id !== threadId);
+          },
+          "plugin:event|listen": ({ event, handler }) => {
+            if (!listeners.has(event)) listeners.set(event, []);
+            listeners.get(event).push(handler);
+            return handler;
+          },
+          "plugin:event|unlisten": () => null,
+          open_url: ({ url }) => console.log("[mock] open_url", url),
+          log_line: ({ message }) => console.log("[mock] log", message),
+        };
+
+        if(localMode)window.addEventListener("DOMContentLoaded",()=>{const panel=document.querySelector("#mock-panel");const banner=document.createElement("p");banner.textContent=fa?"فقط پیش‌نمایش · پاسخ‌ها ساختگی‌اند؛ میکروفون و API واقعی فعال نیستند.":"Preview only · replies are fixtures; microphone and real API are disabled.";banner.style.cssText="width:100%;margin:8px;line-height:1.8;direction:"+(fa?"rtl":"ltr");panel.prepend(banner);});
+        window.__TAURI_INTERNALS__ = {
+          metadata: { currentWindow: { label: "island" }, currentWebview: { windowLabel: "island", label: "island" } },
+          transformCallback(cb) {
+            const id = nextCb++;
+            callbacks.set(id, cb);
+            return id;
+          },
+          unregisterCallback(id) {
+            callbacks.delete(id);
+          },
+          convertFileSrc: (p) => p,
+          async invoke(cmd, args = {}) {
+            const fn = handlers[cmd];
+            return fn ? fn(args) : null;
+          },
+        };
+        window.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener() {} };
+        if(voiceMode)window.addEventListener("DOMContentLoaded",()=>{
+          const panel=document.querySelector("#mock-panel");const output=document.createElement("p");output.id="mock-voice-result";output.textContent=fa?"شبیه‌سازی فرمان صوتی؛ صدای ورودی، متن، ابزار و پخش همگی ساختگی‌اند. هیچ میکروفون یا API واقعی فعال نیست.":"Voice-task simulation: input, transcript, tool and playback are fixtures. No real microphone or API.";output.style.cssText="width:100%;margin:8px;direction:"+(fa?"rtl":"ltr");panel.append(output);
+          for(const[scene,label,query]of[["success",fa?"شبیه‌سازی: این سیستم":"Simulate: This PC","open This PC"],["failure",fa?"شبیه‌سازی: خطای بازکردن":"Simulate: launch failure","open Calculator"],["blocked",fa?"شبیه‌سازی: کار حساس":"Simulate: sensitive task","delete file"],["task",fa?"شبیه‌سازی: تسک":"Simulate: task","prepare a report tomorrow"],["note",fa?"شبیه‌سازی: یادداشت":"Simulate: note","remember this meeting idea"],["yes",fa?"شبیه‌سازی: تأیید":"Simulate: yes","yes"],["no",fa?"شبیه‌سازی: رد":"Simulate: no","no"],["ambient",fa?"شبیه‌سازی: گفت‌وگوی محیط":"Simulate: ambient","ambient remark"]]){const button=document.createElement("button");button.textContent=label;button.onclick=async()=>{await window.__mockVoiceEnd?.();voiceScene=scene;voiceQuery=query;syntheticPending=true;if(scene==="blocked")emit("roadeep-session",{signedIn:true,user:{id:"u1",name:"Preview"},reason:null});const mic=document.querySelector(".global-voice-toggle");if(mic)mic.click();else voiceNotice("Preview microphone control not ready");};panel.append(button);}
+        });
+        window.__mock = { get voiceSaved(){return voiceSaved;},get voiceProposal(){return voiceProposal;},emit, setBalance: (units, plan = "Pro") => { balance = { units, plan }; emit("roadeep-balance", balance); } };
+        window.addEventListener("mousemove", (e) => emit("cursor", { x: e.clientX, y: e.clientY }));
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="mock-panel">
+      <button onclick="__mock.emit('tray', 'chat')">open chat</button>
+      <button onclick="location.search = '?lang=fa'">fa</button>
+      <button onclick="location.search = '?lang=en'">en</button>
+      <button onclick="__mock.setBalance(0)">balance 0</button>
+      <button onclick="__mock.setBalance(1234567, 'Business')">balance 1.2M</button>
+      <button onclick="__mock.emit('settings-changed', { language: 'en' })">switch → en</button>
+      <button onclick="__mock.emit('settings-changed', { language: 'fa' })">switch → fa</button>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+    <script type="module">if(new URLSearchParams(location.search).get("voice")==="1"){const{stopGlobalVoice}=await import("/src/local/global-voice.ts");window.__mockVoiceEnd=()=>stopGlobalVoice(false,true);}</script>
+  </body>
+</html>

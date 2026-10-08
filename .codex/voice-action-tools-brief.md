@@ -1,0 +1,27 @@
+# Voice task execution contract — 2026-10-04
+
+User confirms microphone works. Voice must run ordinary tasks through Roadeep tools, including opening This PC, and must not run sensitive actions. Existing Codex desktop observer remains read-only; replies/permissions remain in Codex.
+
+## Native owner: local_engine
+
+Own new `src-tauri/src/desktop_actions/`, native command/module registration in lib.rs, Roadeep SendOptions/command integration, chat.rs tool loop and job approval policy, MCP reserved desktop slug. Preserve existing work. You are not alone in this codebase; accommodate other edits, do not revert them.
+
+1. Fixed, deny-unknown-fields desktop tool `desktop__open` with enum targets this_pc, downloads, documents, settings, calculator, notepad. Trusted absolute Windows system executables, constant arguments only. No user paths, URLs, shell, command text, arbitrary executables, elevated launch, write/delete/send/payment/security actions. Validate target and input bounds natively, return accurate launch success/failure. Log request/action/outcome/elapsed time without transcript.
+2. `desktop_voice_try(query: string, language: string, requestId: string)` -> `{handled: boolean, text: string, action?: string}`. Before any launch, validate allowed invoking app window, bounded query/request ID. Native anchored single-intent grammar accepts common Persian/English forms of opening supported targets, including «مای کامپیوتر باز کن». Unknown/compound/injection queries return handled=false without execution. No LLM text can be passed as a shell command. This works without local model or API login. Return text only after successful launch; errors are coded. Reuse exactly the desktop tool executor.
+3. Add `voiceTask?: boolean` to frontend native chat invoke; native SendOptions/LoopCtx/job state propagates it, defaults false for compatibility. This flag only RESTRICTS authority; it cannot grant general tool/approval authority. Existing admin verification/transcription remains before voice submit.
+4. Voice tool offers are an explicit native allowlist: fixed desktop tool plus the ten existing local planner tools. Available even when no external MCP server is enabled and irrespective of conversation tool toggle, without changing stored preference. Do not connect arbitrary MCP for voice. At execution, recheck stable server ID + exact tool name, not advertised annotations/readOnly hints or qualified name alone. Unknown/MCP/computer calls denied. Typed chat keeps existing approvals and preferences; desktop can be offered when tools enabled.
+5. Server-side approval during a voice job must stop/cancel the voice job and return coded `voice-sensitive-action-blocked`; never approve, silently wait, or emit an actionable approval card for that voice turn. Propagate policy across every run_step/tool continuation. Do not change typed server approval behavior. Add brief policy text to model tool instructions: only supplied safe tools, no claims of execution without results.
+6. Tests: parser normal/variants, compound/injection/unknown no launch, invalid enum/extra fields rejected, execution failure honest, voice allowlist rejects spoofed MCP/computer and Ask tools, planner available without external MCP, typed unchanged, server approval blocked across first/continued steps. Mock launcher/network; no paid API or real sensitive operations.
+
+## Frontend owner: local_assets
+
+Own bridge-local.ts, bridge.ts voice parameter, chat.ts submit/voice tool status integration, local helper/tests and localized error messages. Wait for native exact contract if needed. You are not alone in this codebase; do not revert others.
+
+1. On verified voice submit, call desktop_voice_try before the model routing path, including when local runtime disabled or offline/sign-out. Existing request ID, busy/cancel guards prevent duplicate execution. Native handled result becomes truthful local chat reply + existing tool-step/status; preserve chronological context and spoken reply. Unknown returns unchanged to local/cloud routing. Avoid frontend keyword execution logic.
+2. Pass voiceTask=true through Bridge.chatSend for all voice cloud tasks, false/default for typed. Tools for voice are native allowlisted; never autoapprove or bypass permission cards in frontend.
+3. Voice failures return meaningful short localized text for TTS and chat (especially sensitive blocked, sign-in needed, launcher failure), not a generic capture error. Never claim success on errors/cancellation. Maintain original cancellation, state cleanup, speaker verification and no raw audio persistence.
+4. Tests verify verified voice -> fast path -> no cloud/login/model on handled, unknown -> cloud with voice flag, typed unchanged, cancellation/busy/double submit, rejected action truthful/spoken, native policy error maps correctly. Use existing UI tool rows; no settings redesign.
+
+## Root verification and release
+
+Root audits all output and runs frontend typecheck/unit suite, native relevant+full offline tests, public speaker subprocess check. Test desktop command with mock launcher first; one actual This PC launch is authorized by user's explicit example and may be used for installed acceptance, but no other app/user data access. Build all-model installer, install latest app, verify binary/version and runtime receipt. Document actual capabilities/limits; no promise arbitrary tasks or remote services unavailable to tools.

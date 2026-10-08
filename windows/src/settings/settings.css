@@ -1,0 +1,2718 @@
+/* Settings window — Roadeep brand (dark), laid out as a desktop utility:
+   a section navigation and one scrolling column of cards.
+
+   Accent discipline: orange is reserved for the primary button, a switch that
+   is on, the active nav bar, focus rings and links. Everything else is neutral. */
+
+@import "../assets/fonts/vazirmatn.css";
+
+:root {
+  /* Makes Windows render the native dropdown and scrollbars dark — without it
+     the <select> popup is white text on white. */
+  color-scheme: dark;
+
+  /* Type: same two stacks as the island (src/style.css). */
+  --font: "Vazirmatn Persian", system-ui, "Segoe UI Variable Text", "Segoe UI", sans-serif;
+  --mono: "Cascadia Mono", "Consolas", ui-monospace, monospace;
+
+  /* Roadeep dark theme (Roadeep_front src/contexts/theme/index.css, .dark). */
+  --bg: #111317;
+  --surface-1: #13151a;
+  --surface-2: #15171c;
+  --surface-3: #16191f;
+  --surface-4: #181b21;
+  --surface-5: #39414f;
+  --sunken: #0d0f12;
+  --island: #000000;
+  --surface-hover: color-mix(in srgb, var(--surface-4), var(--surface-5) 35%);
+  --surface-press: color-mix(in srgb, var(--surface-4), var(--surface-5) 55%);
+
+  --text: #ffffff;
+  --text-2: #ffffffb2;
+  --text-3: rgb(255 255 255 / 56%);
+  --divider: #ffffff1f;
+  --border-strong: rgb(255 255 255 / 24%);
+  /* Outline of an off switch: ≥ 3:1 against the card. */
+  --control-edge: rgb(255 255 255 / 44%);
+
+  --primary: #ff6a00;
+  --primary-hover: #e86000;
+  --primary-pressed: #b54b00;
+  --primary-24: rgb(236 74 10 / 24%);
+  /* Dark text on orange: ~6.4:1 on #ff6a00, still ≥ 4.5:1 on hover. */
+  --on-primary: var(--bg);
+
+  --success: #32d583;
+  --success-12: rgb(50 213 131 / 12%);
+  --success-24: rgb(50 213 131 / 24%);
+  --error: #f97066;
+  --error-8: rgb(249 112 102 / 8%);
+  --error-12: rgb(249 112 102 / 12%);
+  --error-20: rgb(249 112 102 / 20%);
+  --error-40: rgb(249 112 102 / 40%);
+  --warning: #fec84b;
+  --warning-12: rgb(254 200 75 / 12%);
+  --warning-24: rgb(254 200 75 / 24%);
+
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-full: 999px;
+
+  /* Spacing scale. */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  --t-fast: 160ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Depth, built only from the palette above plus black/white alpha. */
+  --ambient-glow: color-mix(in srgb, var(--primary) 6%, transparent);
+  --card-fill: linear-gradient(180deg, color-mix(in srgb, var(--surface-3), var(--surface-5) 8%), var(--surface-2) 70%);
+  --card-edge-top: inset 0 1px 0 rgb(255 255 255 / 7%);
+  --card-shadow:
+    var(--card-edge-top),
+    0 1px 2px rgb(0 0 0 / 30%),
+    0 12px 32px -16px rgb(0 0 0 / 70%);
+  --tile-fill: linear-gradient(180deg, var(--surface-4), var(--surface-2));
+  --row-hover: color-mix(in srgb, var(--surface-hover) 45%, transparent);
+  --hover-edge: color-mix(in srgb, var(--divider), var(--border-strong) 50%);
+  --chapter-gap: 56px;
+  --chapter-rule: linear-gradient(90deg, transparent, var(--divider) 18%, var(--divider) 82%, transparent);
+
+  /* Chapter titles, the app name, then four text sizes; levels are also
+     separated by weight. */
+  --fs-h1: 22px;
+  --fs-brand: 18px;
+  --fs-h2: 16px;
+  --fs-body: 14px;
+  --fs-hint: 13px;
+  --fs-small: 12px;
+}
+
+:root[lang="fa"] {
+  --font: "Vazirmatn", system-ui, "Segoe UI Variable Text", "Segoe UI", sans-serif;
+  --fs-hint: 13.5px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Only .content scrolls. Clipping the document keeps focus() and stray
+   absolutely positioned helpers from ever scrolling the whole window. */
+html,
+body {
+  height: 100%;
+  overflow: clip;
+}
+
+body.settings-window {
+  background: var(--bg);
+  color: var(--text);
+  font: 400 var(--fs-body) / 1.6 var(--font);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+#settings-root {
+  height: 100%;
+}
+
+/* ── Scrollbars ─────────────────────────────────────────────────────────── */
+
+.content,
+.side,
+.wiz-body,
+.diff,
+.wiz-instr,
+textarea {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-5) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-5);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ── Shell: navigation + scrolling column ───────────────────────────────── */
+
+.shell {
+  position: relative;
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  height: 100%;
+}
+
+.side {
+  background: var(--surface-2);
+  border-inline-end: 1px solid var(--divider);
+  padding: var(--sp-5) var(--sp-3);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.side-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--divider);
+}
+
+.app-name {
+  font: 700 var(--fs-brand) / 1.3 var(--font);
+  letter-spacing: -0.01em;
+}
+
+.side-brand .page-sub {
+  font-size: var(--fs-small);
+  color: var(--text-3);
+}
+
+.nav-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+button.nav-item {
+  position: relative;
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-2);
+  font: 500 var(--fs-body) / 1.4 var(--font);
+  text-align: start;
+}
+
+button.nav-item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--surface-hover) 18%, transparent);
+  border: 0;
+  color: var(--text);
+}
+
+button.nav-item:active:not(:disabled) {
+  background: var(--surface-press);
+}
+
+/* Active: a quiet lift; the orange bar and icon carry the state. */
+button.nav-item.on,
+button.nav-item.on:hover:not(:disabled) {
+  background: var(--surface-hover);
+  box-shadow: var(--card-edge-top);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.nav-item .icon {
+  color: var(--text-3);
+}
+
+button.nav-item:hover:not(:disabled) .icon {
+  color: var(--text-2);
+}
+
+/* The indicator: bar and icon; the label stays white. */
+button.nav-item.on .icon {
+  color: var(--primary);
+}
+
+button.nav-item::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: var(--sp-3);
+  bottom: var(--sp-3);
+  width: 3px;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  opacity: 0;
+}
+
+button.nav-item.on::before {
+  opacity: 1;
+}
+
+.side-foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-hint);
+}
+
+.nav-item .icon {
+  flex: 0 0 auto;
+}
+
+.nav-short {
+  display: none;
+}
+
+/* Ambient depth: a faint warm glow over the top of the column and a slow fall
+   from the raised surface to the page. It stays put while the column scrolls. */
+.content {
+  position: relative;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  container-type: inline-size;
+  min-width: 0;
+  background:
+    radial-gradient(ellipse min(560px, 100%) 260px at 50% 0, var(--ambient-glow), transparent),
+    linear-gradient(180deg, var(--surface-1), var(--bg) 320px);
+}
+
+.content-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--sp-5) var(--sp-6) var(--sp-6);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Chapters: wide air and a hairline that fades out at both ends. */
+.content-inner > .sec-wrap + :is(.sec-wrap, .page-foot),
+.sec-stack > .sec + .sec {
+  position: relative;
+  margin-top: var(--chapter-gap);
+}
+
+.content-inner > .sec-wrap + .sec-wrap::before,
+.sec-stack > .sec + .sec::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: calc(var(--chapter-gap) / -2);
+  height: 1px;
+  background: var(--chapter-rule);
+  pointer-events: none;
+}
+
+/* Narrow window: the sidebar folds into a top tab bar. */
+@media (max-width: 639px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .side {
+    padding: var(--sp-2);
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--divider);
+    overflow: visible;
+  }
+
+  .side-brand,
+  .side-foot {
+    display: none;
+  }
+
+  .nav-list {
+    flex-direction: row;
+  }
+
+  /* Equal tabs, except one whose label needs more ("Integrations" at
+     375px) takes its own width rather than being cut. */
+  .nav-list li {
+    flex: 1 1 0;
+    min-width: max-content;
+  }
+
+  /* Narrower than six labels: the floor goes and the short labels ellipsize. */
+  @media (max-width: 359px) {
+    .nav-list li {
+      min-width: 0;
+    }
+  }
+
+  button.nav-item {
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--sp-1);
+    min-height: 56px;
+    padding: var(--sp-2) var(--sp-1);
+    font-size: var(--fs-small);
+    text-align: center;
+  }
+
+  /* Tab bar: the underline and orange icon mark the tab, no fill; hover only
+     brightens, so it never outranks the current tab. */
+  button.nav-item:hover:not(:disabled),
+  button.nav-item.on,
+  button.nav-item.on:hover:not(:disabled) {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  /* Sits on the bar's bottom hairline, like a tab marker. */
+  button.nav-item::before {
+    inset-inline: 30%;
+    top: auto;
+    bottom: calc(var(--sp-2) * -1 - 1px);
+    width: auto;
+    height: 2px;
+  }
+
+  .nav-full {
+    display: none;
+  }
+
+  .nav-short {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .content-inner {
+    padding: var(--sp-5) var(--sp-4) var(--sp-6);
+  }
+
+  .shell {
+    --chapter-gap: 40px;
+  }
+}
+
+/* ── Page and section headers ───────────────────────────────────────────── */
+
+h1 {
+  font: 700 var(--fs-h1) / 1.3 var(--font);
+  letter-spacing: -0.01em;
+}
+
+.version {
+  font: 500 var(--fs-small) / 1.6 var(--mono);
+  color: var(--text-2);
+  background: var(--surface-4);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-full);
+  padding: 0 var(--sp-2);
+}
+
+.page-sub {
+  color: var(--text-2);
+  font-size: var(--fs-hint);
+}
+
+.page-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--divider);
+}
+
+.sec-wrap {
+  scroll-margin-top: var(--sp-4);
+}
+
+.sec-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.sec {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+/* Placeholders for feedback that is not showing take no gap. */
+:is(.sec, .card, .login-form, .tab-pane, .group, .wiz-body, .form-actions) > div:empty {
+  display: none;
+}
+
+.sec-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-1);
+}
+
+/* Neutral tile: a lit top edge and a soft fall, never an orange fill. */
+.sec-icon {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius);
+  background: var(--tile-fill);
+  border: 1px solid var(--divider);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%), 0 1px 2px rgb(0 0 0 / 40%);
+  color: var(--text);
+}
+
+.sec-titles {
+  flex: 1 1 200px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sec-head h2 {
+  font: 700 var(--fs-h1) / 1.25 var(--font);
+  letter-spacing: -0.015em;
+  outline: none;
+}
+
+:root[lang="fa"] .sec-head h2 {
+  letter-spacing: 0;
+}
+
+.sec-desc {
+  color: var(--text-2);
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+}
+
+.sec-badge {
+  align-self: center;
+}
+
+/* Narrow column: the status drops under the head, so line it up with the
+   title rather than the icon tile. */
+@container (max-width: 420px) {
+  .sec-head > :not(.sec-icon, .sec-titles) {
+    margin-inline-start: calc(40px + var(--sp-4));
+  }
+}
+
+.sec-badge:empty {
+  display: none;
+}
+
+h3 {
+  font: 600 var(--fs-h2) / 1.5 var(--font);
+  color: var(--text);
+}
+
+h4 {
+  font: 600 var(--fs-small) / 1.5 var(--font);
+  color: var(--text-2);
+  margin-top: var(--sp-1);
+}
+
+.hint {
+  font-size: var(--fs-hint);
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+:is(.hint, .set-hint, .sec-desc, .page-sub, .notice, .login-intro) {
+  text-wrap: pretty;
+}
+
+.hint-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* ── Cards and rows ─────────────────────────────────────────────────────── */
+
+/* Layered: a slight fall between two surfaces, a lit top edge, a soft drop. */
+.card {
+  background: var(--card-fill);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.card.list {
+  padding: var(--sp-1) var(--sp-4);
+  gap: 0;
+}
+
+.card.list > .notice {
+  margin: var(--sp-1) 0 var(--sp-3);
+}
+
+.card-head {
+  padding: var(--sp-3) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+/* Hover physics for list rows (services, agents; MCP rows reuse it). The row
+   reaches 8px into the card's padding so the tint has room, and its content
+   stays where it was. The tint is a pseudo layer, so the row's separator
+   keeps square ends and nothing shifts. Open rows hold still. */
+.content :is(.int-item, .agent-item, .mcpc-item, .mcp-client) {
+  position: relative;
+  isolation: isolate;
+  margin-inline: calc(var(--sp-2) * -1);
+  padding-inline: var(--sp-2);
+}
+
+.content :is(.int-item, .agent-item, .mcpc-item, .mcp-client)::after {
+  content: "";
+  position: absolute;
+  /* Clear of the next row's separator, so the edge never doubles a rule. */
+  inset: 0 0 1px;
+  z-index: -1;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px transparent;
+  pointer-events: none;
+  transition:
+    background-color var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
+}
+
+.content :is(.int-item, .agent-item, .mcpc-item, .mcp-client):is(:hover, :has(:focus-visible)):not(:has([aria-expanded="true"]))::after {
+  background: var(--row-hover);
+  box-shadow: inset 0 0 0 1px var(--hover-edge);
+}
+
+/* One hover layer per row: the disclosure button inside lends its fill to the
+   row and only brightens its chevron. */
+.content :is(.int-item, .mcpc-item):not(:has([aria-expanded="true"])) :is(button.int-id, button.mcpc-id):hover:not(:disabled) {
+  background: transparent;
+}
+
+.content :is(button.int-id, button.mcpc-id) .chev {
+  transition: transform var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+
+.content :is(button.int-id, button.mcpc-id):hover:not(:disabled) .chev {
+  color: var(--text);
+}
+
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sp-3) var(--sp-4);
+  min-height: 64px;
+  padding: var(--sp-3) 0;
+}
+
+.card.list > :is(.set-row, .card-head) + .set-row {
+  border-top: 1px solid var(--divider);
+}
+
+/* A setting that only belongs to the row above it (reasoning effort): a
+   sunken strip hanging off its parent, with a guide line at the start edge. */
+.card.list > .set-row.sub {
+  border-top: 0;
+  min-height: 0;
+  margin: calc(var(--sp-1) * -1) 0 var(--sp-3);
+}
+
+.set-row.sub .set-text {
+  flex-basis: 120px;
+}
+
+.set-row.sub .set-ctrl select {
+  min-width: 160px;
+}
+
+.set-row.sub .set-label {
+  font-weight: 500;
+}
+
+.set-row.sub select {
+  height: 36px;
+}
+
+.set-text {
+  flex: 1 1 200px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.set-label {
+  font: 600 var(--fs-body) / 1.5 var(--font);
+  color: var(--text);
+}
+
+.set-hint {
+  font-size: var(--fs-hint);
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.set-row.off .set-label {
+  color: var(--text-2);
+}
+
+.set-ctrl {
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+.set-ctrl select {
+  min-width: 200px;
+  max-width: 100%;
+}
+
+.unit {
+  font-size: var(--fs-hint);
+  color: var(--text-2);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+/* Paths and other machine text: LTR monospace on a sunken well. */
+.kv-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.path-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) 0;
+}
+
+.path-row:first-child {
+  padding-top: 0;
+}
+
+.path-row:last-child {
+  padding-bottom: 0;
+}
+
+.path-row + .path-row {
+  border-top: 1px solid var(--divider);
+}
+
+.path-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  font: 500 var(--fs-body) / 1.5 var(--font);
+}
+
+code,
+.path {
+  font: 400 var(--fs-small) / 1.6 var(--mono);
+  color: var(--text-2);
+  user-select: text;
+}
+
+.path {
+  display: block;
+  background: var(--sunken);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  padding: var(--sp-2) var(--sp-3);
+  word-break: break-all;
+  text-align: left;
+}
+
+/* ── Status badges ──────────────────────────────────────────────────────── */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex: 0 0 auto;
+  min-height: 24px;
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-full);
+  background: var(--surface-4);
+  color: var(--text-2);
+  font: 500 var(--fs-small) / 1.5 var(--font);
+  white-space: nowrap;
+}
+
+.status-badge .icon {
+  flex: 0 0 auto;
+}
+
+.status-badge.ok {
+  background: var(--success-12);
+  border-color: var(--success-24);
+  color: var(--success);
+}
+
+.status-badge.warn {
+  background: var(--warning-12);
+  border-color: var(--warning-24);
+  color: var(--warning);
+}
+
+.status-badge.err {
+  background: var(--error-12);
+  border-color: var(--error-40);
+  color: var(--error);
+}
+
+/* Plan lock: neutral; the upgrade link next to it is the only accent. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: 24px;
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-full);
+  background: var(--surface-4);
+  color: var(--text-2);
+  font: 500 var(--fs-small) / 1.5 var(--font);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: 24px;
+  font: 400 var(--fs-small) / 1.5 var(--font);
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-full);
+  background: var(--surface-4);
+  border: 1px solid var(--divider);
+  color: var(--text-2);
+}
+
+.chip b {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+
+/* Plain <button> is the secondary action. Special controls reset below. */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 36px;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  background: var(--surface-4);
+  color: var(--text);
+  font: 500 var(--fs-body) / 1.3 var(--font);
+  cursor: pointer;
+  transition:
+    background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease),
+    opacity var(--t-fast) var(--ease);
+}
+
+button:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+button:active:not(:disabled) {
+  background: var(--surface-press);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.sm {
+  min-height: 32px;
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-hint);
+}
+
+button.block {
+  width: 100%;
+}
+
+/* Quiet action: no fill until hovered. */
+button.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-2);
+}
+
+button.ghost:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--divider);
+  color: var(--text);
+}
+
+button.icon-only {
+  width: 32px;
+  padding: 0;
+}
+
+/* Nothing to do yet: keeps its grid column, out of sight and out of reach. */
+button.idle {
+  visibility: hidden;
+}
+
+button.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+button.primary:active:not(:disabled) {
+  background: var(--primary-pressed);
+  border-color: var(--primary-pressed);
+}
+
+/* A disabled primary keeps reading as the main action, only dimmer. */
+button.primary:disabled {
+  opacity: 0.5;
+}
+
+button.danger {
+  background: var(--error-12);
+  border-color: var(--error-40);
+  color: var(--error);
+}
+
+button.danger:hover:not(:disabled) {
+  background: var(--error-20);
+  border-color: var(--error);
+}
+
+button.danger:active:not(:disabled) {
+  background: var(--error-12);
+}
+
+button.link {
+  position: relative;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--primary);
+  font-weight: 500;
+}
+
+/* At least 24px to hit, whatever the line height. */
+button.link::before {
+  content: "";
+  position: absolute;
+  inset: -4px -2px;
+}
+
+/* Inline remove: the error tint marks it, a trash icon says it. */
+button.link.danger-link {
+  gap: var(--sp-1);
+  color: var(--error);
+}
+
+button.link.danger-link:active:not(:disabled) {
+  color: var(--error);
+}
+
+/* Inline actions in a key panel share one size and weight. */
+:is(.key-action, .key-help) button.link {
+  font: 500 var(--fs-hint) / 1.5 var(--font);
+}
+
+button.link:hover:not(:disabled) {
+  background: transparent;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+button.link:active:not(:disabled) {
+  background: transparent;
+  color: var(--primary-hover);
+}
+
+:is(button, input, select, textarea, a):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ── Inputs ─────────────────────────────────────────────────────────────── */
+
+input:is([type="text"], [type="password"], [type="email"], [type="tel"], [type="number"], [type="search"]),
+select,
+textarea {
+  min-height: 36px;
+  padding: 0 var(--sp-3);
+  background: var(--surface-4);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  color: var(--text);
+  font: 400 var(--fs-body) / 1.5 var(--font);
+  transition: border-color var(--t-fast) var(--ease);
+}
+
+textarea {
+  padding: var(--sp-2) var(--sp-3);
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.6;
+}
+
+:is(input, select, textarea):hover:not(:disabled):not(:focus) {
+  border-color: var(--border-strong);
+}
+
+:is(input, select, textarea):focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+:is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--primary-24);
+  outline-offset: 2px;
+}
+
+::placeholder {
+  color: var(--text-3);
+  opacity: 1;
+}
+
+input.num {
+  width: 80px;
+}
+
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  padding-inline-end: var(--sp-6);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffffb2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 16px;
+  background-position: right 12px center;
+}
+
+[dir="rtl"] select {
+  background-position: left 12px center;
+}
+
+/* The popup is drawn by the OS: give it an explicit pair of colours rather than
+   inheriting white on white. */
+select option {
+  background-color: var(--surface-4);
+  color: var(--text);
+}
+
+:is(select, input, textarea):disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+[aria-invalid="true"] {
+  border-color: var(--error);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 140px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--surface-5);
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: 0 0 0 1px var(--control-edge);
+}
+
+/* An input with a button inside its inline end (password show / hide). The
+   field's text stays LTR, so the room is made on whichever side the button is. */
+.input-wrap {
+  position: relative;
+  display: flex;
+}
+
+.input-wrap > input {
+  flex: 1 1 auto;
+  width: 100%;
+  padding-right: 44px;
+}
+
+:root[dir="rtl"] .input-wrap > input {
+  padding-right: var(--sp-3);
+  padding-left: 44px;
+}
+
+button.reveal {
+  position: absolute;
+  top: 50%;
+  right: var(--sp-1);
+  transform: translateY(-50%);
+  width: 32px;
+  min-height: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+}
+
+:root[dir="rtl"] button.reveal {
+  right: auto;
+  left: var(--sp-1);
+}
+
+button.reveal:hover:not(:disabled) {
+  border: 0;
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+/* ── Switch ─────────────────────────────────────────────────────────────── */
+
+button.switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  min-height: 0;
+  flex: 0 0 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--surface-5);
+  box-shadow: inset 0 0 0 1px var(--control-edge);
+}
+
+/* 20px to look at, 28px to hit. */
+button.switch::before {
+  content: "";
+  position: absolute;
+  inset: -4px -2px;
+}
+
+button.switch:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--surface-5), var(--text) 12%);
+  border: 0;
+}
+
+button.switch.on,
+button.switch.on:hover:not(:disabled) {
+  background: var(--primary);
+  box-shadow: none;
+}
+
+button.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text);
+  transition: transform var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
+}
+
+button.switch.on::after {
+  transform: translateX(16px);
+}
+
+/* Disabled: the outline stays, the knob goes quiet. */
+button.switch:disabled {
+  opacity: 1;
+  background: var(--surface-4);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+button.switch:disabled::after {
+  background: var(--surface-5);
+}
+
+button.switch.on:disabled {
+  background: var(--primary-24);
+}
+
+/* ── Notices ────────────────────────────────────────────────────────────── */
+
+.notice {
+  font-size: var(--fs-hint);
+  line-height: 1.6;
+  border-radius: var(--radius);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid transparent;
+}
+
+.notice.ok {
+  background: var(--success-12);
+  border-color: var(--success-24);
+  color: var(--success);
+}
+
+.notice.err {
+  background: var(--error-12);
+  border-color: var(--error-40);
+  color: var(--error);
+}
+
+.notice.warn {
+  background: var(--warning-12);
+  border-color: var(--warning-24);
+  color: var(--warning);
+}
+
+.diff {
+  font: 400 var(--fs-small) / 1.6 var(--mono);
+  background: var(--sunken);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  padding: var(--sp-3);
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre;
+  user-select: text;
+}
+
+.diff .add {
+  color: var(--success);
+}
+
+.diff .del {
+  color: var(--error);
+}
+
+.diff .ctx {
+  color: var(--text-3);
+}
+
+/* Section containers that keep their place while their section redraws. */
+.slot {
+  display: contents;
+}
+
+/* ── Roadeep account ────────────────────────────────────────────────────── */
+
+/* Full width of the column like every other card; the intro, tabs and form
+   all span the card, so they share both edges in either direction. */
+.login-card {
+  padding: var(--sp-4);
+  gap: var(--sp-4);
+}
+
+.login-card > * {
+  width: 100%;
+}
+
+.login-intro {
+  font-size: var(--fs-body);
+  color: var(--text-2);
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-1);
+  padding: var(--sp-1);
+  border-radius: var(--radius);
+  background: var(--sunken);
+  border: 1px solid var(--divider);
+}
+
+button.tab {
+  min-height: 32px;
+  padding: 0 var(--sp-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-hint);
+}
+
+button.tab:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: transparent;
+  color: var(--text);
+}
+
+button.tab.on,
+button.tab.on:hover:not(:disabled),
+button.seg.on,
+button.seg.on:hover:not(:disabled) {
+  background: var(--surface-press);
+  border-color: var(--border-strong);
+  box-shadow: var(--card-edge-top);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* One choice out of a few (answer mode): same look as the sign-in tabs. */
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-1);
+  padding: var(--sp-1);
+  border-radius: var(--radius);
+  background: var(--sunken);
+  border: 1px solid var(--divider);
+}
+
+button.seg {
+  min-height: 32px;
+  padding: 0 var(--sp-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-hint);
+}
+
+button.seg:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: transparent;
+  color: var(--text);
+}
+
+button.seg.on,
+button.seg.on:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.set-row.stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-2);
+}
+
+.set-row.stack > .set-text {
+  flex: none;
+}
+
+.mode-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.login-form,
+.agent-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.agent-form {
+  padding: var(--sp-3);
+  border-radius: var(--radius);
+  background: var(--surface-1);
+  border: 1px solid var(--divider);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.field > input,
+.field > select,
+.field > textarea {
+  width: 100%;
+}
+
+.field > label,
+.label-row > label {
+  font: 500 var(--fs-body) / 1.5 var(--font);
+  color: var(--text);
+}
+
+.label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.field-err {
+  color: var(--error);
+  font-size: var(--fs-hint);
+}
+
+.field-err:empty {
+  display: none;
+}
+
+input.otp {
+  letter-spacing: 0.3em;
+  font-family: var(--mono);
+  text-align: center;
+}
+
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  font-size: var(--fs-hint);
+}
+
+.links .sep {
+  color: var(--text-3);
+}
+
+.account-card {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--surface-4);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  font: 600 var(--fs-h2) var(--font);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-card .who {
+  flex: 1 1 180px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.account-card .name {
+  font: 600 var(--fs-h2) / 1.5 var(--font);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-card .contact {
+  font-size: var(--fs-hint);
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root[dir="rtl"] .account-card .who > .name {
+  text-align: right;
+}
+
+:root[dir="ltr"] .account-card .who > .name {
+  text-align: left;
+}
+
+.lock {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  margin-top: var(--sp-1);
+  font-size: var(--fs-hint);
+}
+
+/* ── Integrations ───────────────────────────────────────────────────────── */
+
+.int-agents .group {
+  gap: var(--sp-3);
+}
+
+.counter-chip.full {
+  background: var(--warning-12);
+  border-color: var(--warning-24);
+  color: var(--warning);
+}
+
+.storage-note {
+  font-size: var(--fs-small);
+  color: var(--text-3);
+}
+
+.int-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.int-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-2) 0;
+}
+
+/* Between visible items only, so a search never leaves a stray top rule. */
+.int-item:not([hidden]) ~ .int-item:not([hidden]) {
+  border-top: 1px solid var(--divider);
+}
+
+/* Category subheads (Payments, Code & deploys, …) */
+.int-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.int-cat-title {
+  margin: 0;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.int-search {
+  width: 100%;
+}
+
+.int-search::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.int-search-empty {
+  padding: var(--sp-2) 0;
+}
+
+/* [Test connection] · result · · · Updated 3 min ago */
+.int-test {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--divider);
+}
+
+.int-test-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.int-test button[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.int-test-result:empty,
+.int-updated:empty,
+.int-test-err:empty {
+  display: none;
+}
+
+.int-updated {
+  font-size: var(--fs-small);
+  color: var(--text-3);
+}
+
+.int-test-err {
+  font-size: var(--fs-hint);
+  color: var(--error);
+  overflow-wrap: anywhere;
+}
+
+/* [disclosure: colour · name · status · chevron] … [switch] */
+.int-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+}
+
+button.int-id {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  margin-inline-start: calc(var(--sp-2) * -1);
+  padding: var(--sp-1) var(--sp-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  text-align: start;
+}
+
+button.int-id:hover:not(:disabled) {
+  border: 0;
+  background: var(--surface-hover);
+}
+
+.int-name {
+  font: 600 var(--fs-body) / 1.5 var(--font);
+}
+
+.int-badge:empty {
+  display: none;
+}
+
+.int-id .chev {
+  display: inline-flex;
+  color: var(--text-2);
+  transition: transform var(--t-fast) var(--ease);
+}
+
+.int-id[aria-expanded="true"] .chev {
+  transform: rotate(180deg);
+}
+
+.int-ctrls {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+}
+
+/* Nested content (key fields, reasoning effort): one sunken strip with a
+   straight guide bar at the start edge. */
+.sub-strip,
+.card.list > .set-row.sub {
+  position: relative;
+  border-radius: var(--radius);
+  background: var(--sunken);
+  padding: var(--sp-3);
+  padding-inline-start: var(--sp-4);
+}
+
+.sub-strip::before,
+.card.list > .set-row.sub::before {
+  content: "";
+  position: absolute;
+  inset-block: var(--sp-2);
+  inset-inline-start: var(--sp-1);
+  width: 2px;
+  border-radius: var(--radius-full);
+  background: var(--border-strong);
+}
+
+.int-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-2);
+}
+
+.key-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.key-field > input {
+  width: 100%;
+}
+
+/* label · status · · · quiet action */
+.key-label-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 24px;
+}
+
+.key-label-row > label {
+  font-size: var(--fs-hint);
+  color: var(--text-2);
+}
+
+.key-action {
+  display: inline-flex;
+  font-size: var(--fs-hint);
+}
+
+.key-help-text {
+  font-size: var(--fs-hint);
+  color: var(--text-2);
+}
+
+.key-help {
+  font-size: var(--fs-hint);
+}
+
+/* Inline "remove?" confirmation under the input. */
+.key-confirm {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius);
+  background: var(--error-8);
+}
+
+.key-confirm:empty {
+  display: none;
+}
+
+.key-confirm .confirm {
+  flex: 1 1 auto;
+  font-size: var(--fs-hint);
+  color: var(--error);
+}
+
+/* Catalog service: "your key is sent only to …", a promise, so the lock. */
+.int-hosts {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  overflow-wrap: anywhere;
+}
+
+.int-hosts .icon {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  color: var(--text-3);
+}
+
+/* [Get a key] [API docs] · · · [Remove service] */
+.int-foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.int-foot-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  font-size: var(--fs-hint);
+}
+
+.int-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+}
+
+.int-foot-line > button.link {
+  font: 500 var(--fs-hint) / 1.5 var(--font);
+}
+
+/* ── Service marketplace (dialog) ───────────────────────────────────────── */
+
+.mk-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: start center;
+  padding: max(16px, 5vh) var(--sp-4) var(--sp-4);
+  background: rgb(0 0 0 / 64%);
+  backdrop-filter: blur(3px);
+  animation: wiz-fade 0.16s ease-out;
+}
+
+.mk {
+  width: min(760px, 100%);
+  height: calc(100vh - max(16px, 5vh) - 16px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-2);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 55%);
+  animation: wiz-rise 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.mk-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) 0;
+}
+
+.mk-titles {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.mk-titles h2 {
+  font: 600 var(--fs-h2) / 1.4 var(--font);
+}
+
+button.mk-close {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-2);
+}
+
+button.mk-close:hover:not(:disabled) {
+  background: var(--surface-4);
+  border: 0;
+  color: var(--text);
+}
+
+.mk-tools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--divider);
+}
+
+.mk-search {
+  width: 100%;
+}
+
+/* Snug enough that every category fits one row at the dialog's full width. */
+.mk-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--sp-1) + 2px);
+}
+
+/* Category filters: chips that read as pressed, not as tabs. */
+button.mk-cat {
+  min-height: 28px;
+  padding: 0 calc(var(--sp-2) + 2px);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-2);
+  font: 500 var(--fs-small) / 1.5 var(--font);
+}
+
+button.mk-cat[aria-pressed="true"] {
+  background: var(--surface-5);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.mk-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-4);
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-5) transparent;
+}
+
+.mk-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--sp-3);
+}
+
+.mk-card {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  background: var(--card-fill);
+  box-shadow: var(--card-edge-top);
+  transition: border-color var(--t-fast) var(--ease);
+}
+
+/* Same hover recipe as the list rows: a tint layer and a brighter edge. */
+.mk-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: transparent;
+  pointer-events: none;
+  transition: background-color var(--t-fast) var(--ease);
+}
+
+.mk-card:is(:hover, :has(:focus-visible)) {
+  border-color: var(--hover-edge);
+}
+
+.mk-card:is(:hover, :has(:focus-visible))::after {
+  background: var(--row-hover);
+}
+
+.mk-card-top {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.mk-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: 600 var(--fs-body) / 1.4 var(--font);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mk-cat-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-small);
+  color: var(--text-3);
+}
+
+.mk-desc {
+  flex: 1 1 auto;
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.mk-card-foot {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+}
+
+.mk-none {
+  padding: var(--sp-2) 0;
+}
+
+@media (max-width: 520px) {
+  .mk-backdrop {
+    padding: var(--sp-2);
+  }
+
+  .mk {
+    height: calc(100vh - 16px);
+  }
+
+  .mk-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Agents ─────────────────────────────────────────────────────────────── */
+
+.subhead {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.agent-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.agent-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  min-height: 56px;
+  padding: var(--sp-3) 0;
+}
+
+.agent-item + .agent-item {
+  border-top: 1px solid var(--divider);
+}
+
+.agent-item.confirming {
+  background: var(--error-8);
+  border-radius: var(--radius);
+  padding-inline: var(--sp-3);
+}
+
+.agent-text {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.agent-name {
+  font-weight: 500;
+}
+
+/* Names and descriptions keep their own direction (dir="auto") but line up
+   with the window's reading edge, so a Latin name in a Persian list does not
+   jump to the other side. */
+:root[dir="rtl"] .agent-text > * {
+  text-align: right;
+}
+
+:root[dir="ltr"] .agent-text > * {
+  text-align: left;
+}
+
+.agent-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.agent-actions .confirm {
+  font-size: var(--fs-hint);
+  color: var(--error);
+}
+
+.counter {
+  font-size: var(--fs-small);
+}
+
+.agent-item .hint.meta {
+  font-size: var(--fs-small);
+  color: var(--text-3);
+}
+
+/* A pill colour (agents and integrations alike): a small character-body dot with
+   a soft halo, never a status. */
+.agent-swatch {
+  --c: #7c5cff;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--c);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 22%, transparent);
+}
+
+button.agent-swatch.btn {
+  position: relative;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* 12px to look at, 24px to hit. */
+button.agent-swatch.btn::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+button.agent-swatch.btn:hover:not(:disabled) {
+  background: var(--c);
+  border: 0;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 36%, transparent);
+}
+
+.color-pop {
+  flex: 1 0 100%;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  padding: var(--sp-1) 0;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+button.swatch {
+  --c: #7c5cff;
+  position: relative;
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: inset 0 0 0 1px var(--divider);
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+
+button.swatch:hover:not(:disabled) {
+  background: var(--c);
+  border: 0;
+  transform: scale(1.08);
+}
+
+button.swatch.on {
+  box-shadow: 0 0 0 2px var(--surface-2), 0 0 0 4px var(--c);
+}
+
+/* The model's suggestion: a small dot under the swatch, distinct from the
+   selection ring. */
+.swatch.suggested::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--text-2);
+}
+
+.empty-card {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  border-radius: var(--radius);
+  border: 1px dashed var(--border-strong);
+  background: var(--surface-1);
+}
+
+.swatch-note {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-small);
+}
+
+.empty-card > button {
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+}
+
+.empty-art {
+  display: grid;
+  grid-template-columns: 12px 12px;
+  gap: var(--sp-2);
+  padding: var(--sp-1);
+  flex: 0 0 auto;
+}
+
+/* ── Agent builder (dialog) ─────────────────────────────────────────────── */
+
+body.wiz-open {
+  overflow: hidden;
+}
+
+.wiz-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: start center;
+  /* Pinned near the top so the footer does not jump between steps. */
+  padding: max(16px, 7vh) var(--sp-4) var(--sp-4);
+  background: rgb(0 0 0 / 64%);
+  backdrop-filter: blur(3px);
+  animation: wiz-fade 0.16s ease-out;
+}
+
+.wiz {
+  width: min(620px, 100%);
+  max-height: calc(100vh - max(16px, 7vh) - 16px);
+  min-height: min(500px, calc(100vh - max(16px, 7vh) - 16px));
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-2);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 55%);
+}
+
+.wiz.enter {
+  animation: wiz-rise 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@keyframes wiz-fade {
+  from { opacity: 0; }
+}
+
+@keyframes wiz-rise {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+
+.wiz-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) var(--sp-1);
+}
+
+.wiz-head h2 {
+  font: 600 var(--fs-h2) / 1.4 var(--font);
+  flex: 1 1 auto;
+}
+
+button.wiz-close {
+  width: 32px;
+  height: 32px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-2);
+}
+
+button.wiz-close:hover:not(:disabled) {
+  background: var(--surface-4);
+  border: 0;
+  color: var(--text);
+}
+
+.wiz-steps {
+  list-style: none;
+  display: flex;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+  border-bottom: 1px solid var(--divider);
+}
+
+.wiz-steps li {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.wiz-steps button {
+  width: 100%;
+  min-height: 32px;
+  justify-content: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-hint);
+}
+
+.wiz-steps button:hover:not(:disabled) {
+  border: 0;
+  background: var(--surface-3);
+}
+
+.wiz-steps button:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.wiz-steps .num {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 600 var(--fs-small) var(--font);
+  background: var(--surface-4);
+  border: 1px solid var(--divider);
+}
+
+.wiz-steps .lbl {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wiz-steps li.done .num {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.wiz-steps li.on button {
+  color: var(--text);
+  background: var(--surface-3);
+  font-weight: 600;
+}
+
+.wiz-steps li.on .num {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+
+.wiz-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.wiz-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-3);
+}
+
+.wiz-row select,
+.wiz-row input {
+  width: 100%;
+  min-width: 0;
+}
+
+.wiz-body .field > input + input {
+  margin-top: var(--sp-1);
+}
+
+.wiz-body textarea {
+  width: 100%;
+}
+
+.wiz-busy {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  color: var(--text-2);
+  font-size: var(--fs-hint);
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--surface-5);
+  border-top-color: var(--text);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.hint.throttle:empty {
+  display: none;
+}
+
+.hint.throttle {
+  color: var(--warning);
+}
+
+.wiz-summary,
+.wiz-final {
+  display: flex;
+  padding: var(--sp-3);
+  border-radius: var(--radius);
+  background: var(--surface-1);
+  border: 1px solid var(--divider);
+}
+
+.wiz-summary {
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.wiz-final {
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.wiz-instr {
+  font-size: var(--fs-hint);
+  color: var(--text-2);
+  white-space: pre-wrap;
+  max-height: 140px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+.wiz-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.chip-s {
+  font-size: var(--fs-small);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius-full);
+  background: var(--surface-4);
+  border: 1px solid var(--divider);
+  color: var(--text-2);
+}
+
+.feature-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* The island in miniature: a black strip with the agent's pill on it. */
+.wiz-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-4);
+  border-radius: var(--radius);
+  background: var(--island);
+  box-shadow: inset 0 0 0 1px var(--divider);
+}
+
+.pill-preview {
+  --agent: #7c5cff;
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 128px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-full);
+  background: var(--sunken);
+  border: 1px solid color-mix(in srgb, var(--agent) 55%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--agent) 30%, transparent);
+}
+
+.pill-preview .mini {
+  margin-inline-start: var(--sp-2);
+}
+
+.pill-preview .lbl {
+  position: absolute;
+  inset-inline: 36px 8px;
+  text-align: center;
+  font: 600 var(--fs-small) var(--font);
+  color: color-mix(in srgb, var(--agent) 45%, white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pill-preview.big {
+  width: 176px;
+  height: 40px;
+}
+
+.pill-preview.big .mini {
+  margin-inline-start: var(--sp-2);
+}
+
+.pill-preview.big .lbl {
+  inset-inline: 48px 16px;
+  font-size: var(--fs-hint);
+}
+
+/* Mini character canvases (src/character/minibots.ts) in this window too. */
+.mini {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.mini canvas {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.wiz-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  border-top: 1px solid var(--divider);
+}
+
+.wiz-foot .confirm {
+  color: var(--error);
+  font-size: var(--fs-hint);
+}
+
+@media (max-width: 520px) {
+  .wiz-steps .lbl {
+    display: none;
+  }
+
+  .wiz-steps li.on .lbl {
+    display: inline;
+  }
+}
+
+/* ── Right-to-left (Persian) ────────────────────────────────────────────────
+   The window takes dir="rtl" on <html>; flex rows, grid columns and logical
+   properties follow on their own. What is left: the switch knob, and the bits
+   that must stay LTR (paths, diffs, keys), which carry dir="ltr". */
+
+[dir="rtl"] button.switch::after {
+  left: auto;
+  right: 2px;
+}
+
+[dir="rtl"] button.switch.on::after {
+  transform: translateX(-16px);
+}
+
+[dir="rtl"] :is(.diff, .path, code) {
+  text-align: left;
+}
+
+/* ── Motion ─────────────────────────────────────────────────────────────── */
+
+/* Section entrance (main.ts revealSections). Fill "backwards" only, so no
+   transform lingers on the section once it has played. */
+.sec-wrap.sec-in {
+  animation: sec-in 420ms var(--ease) backwards;
+}
+
+@keyframes sec-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ── Shortcut recorder (General) ────────────────────────────────────────── */
+
+button.shortcut-rec {
+  min-width: 160px;
+  padding: 0 var(--sp-3);
+}
+
+button.shortcut-rec.recording {
+  border-color: var(--primary);
+  color: var(--text-2);
+}
+
+.keycaps {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.keycaps kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: 600 var(--fs-small) / 1 var(--font);
+}
+
+.keycap-plus {
+  color: var(--text-3);
+  font-size: var(--fs-small);
+}
+
+/* ── Updates (settings/update-row.ts) ───────────────────────────────────── */
+
+.card.list > .set-row[hidden] {
+  display: none;
+}
+
+.update-detail {
+  padding-top: 0;
+}
+
+.card.list > .set-row + .set-row.update-detail {
+  border-top: 0;
+}
+
+.update-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-3);
+}
+
+.update-notes-label {
+  color: var(--text-2);
+  font: 600 var(--fs-small) / 1.5 var(--font);
+}
+
+/* Release notes are plain text from the release; long ones scroll. */
+.update-notes {
+  max-height: 140px;
+  overflow-y: auto;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-sm);
+  background: var(--sunken);
+  color: var(--text-2);
+  font-size: var(--fs-hint);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.update-actions,
+.update-error {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.update-busy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.update-progress {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--surface-4);
+  overflow: hidden;
+}
+
+.update-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+  transition: inline-size var(--t-fast) var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .update-progress > span {
+    transition: none;
+  }
+}
+
+/* Settings → General → Island position: the reset link sits under the edges. */
+.position-reset > [hidden] {
+  display: none;
+}
+
+/* A command inside a notice (ui.ts withCommand): one unbroken LTR run. */
+.notice code.cmd {
+  font-family: var(--mono);
+  font-size: var(--fs-small);
+  white-space: nowrap;
+  unicode-bidi: isolate;
+  padding: 1px var(--sp-1);
+  border-radius: var(--radius-sm);
+  background: var(--sunken);
+}

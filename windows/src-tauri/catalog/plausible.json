@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "id": "plausible",
+  "name": "Plausible Analytics",
+  "category": "marketing",
+  "color": "#5850EC",
+  "desc": {
+    "fa": "پربازدیدترین صفحه‌های امروز سایتت در Plausible.",
+    "en": "Today's most visited pages on your site, from Plausible."
+  },
+  "keyUrl": "https://plausible.io/settings/api-keys",
+  "docsUrl": "https://plausible.io/docs/stats-api",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "کلید API آمار", "en": "Stats API key" },
+      "placeholder": "Stats API key",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9_\\-]{32,128}$"
+    },
+    {
+      "name": "site",
+      "kind": "text",
+      "label": { "fa": "دامنهٔ سایت", "en": "Site domain" },
+      "placeholder": "example.com",
+      "optional": false,
+      "pattern": "^[a-z0-9][a-z0-9.\\-]{1,252}$",
+      "help": {
+        "fa": "همان دامنه‌ای که در Plausible ثبت کرده‌ای، بدون ⁨https://⁩",
+        "en": "The domain as registered in Plausible, without https://"
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["plausible.io"],
+  "request": {
+    "method": "POST",
+    "url": "https://plausible.io/api/v2/query",
+    "headers": { "Accept": "application/json", "Content-Type": "application/json" },
+    "body": {
+      "site_id": "{field.site}",
+      "metrics": ["visitors"],
+      "date_range": "day",
+      "dimensions": ["event:page"]
+    }
+  },
+  "list": {
+    "path": "/results",
+    "max": 10,
+    "id": "/dimensions/0",
+    "title": "/dimensions/0",
+    "subtitle": "/metrics/0"
+  },
+  "openUrl": "https://plausible.io/{field.site}",
+  "webHosts": ["plausible.io"],
+  "pollEvery": 900
+}

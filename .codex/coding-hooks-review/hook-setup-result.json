@@ -1,0 +1,25 @@
+{
+  "provider": "codex",
+  "installed": true,
+  "relayReady": true,
+  "scope": "user",
+  "events": [
+    "PreToolUse",
+    "PermissionRequest",
+    "PostToolUse",
+    "SessionStart",
+    "SessionEnd",
+    "UserPromptSubmit",
+    "SubagentStart",
+    "SubagentStop",
+    "Stop",
+    "Interrupt",
+    "PreCompact",
+    "PostCompact"
+  ],
+  "destination": "C:\\Users\\Amir\\.codex\\hooks.json",
+  "backup": "C:\\Users\\Amir\\.codex\\hooks.json.roadeep-backup-20261005-45ace4e9b6e1418f",
+  "foreignConfigurationPreserved": true,
+  "upstreamTrust": "User must trust exact definitions through Codex /hooks; not bypassed",
+  "completedAt": "2026-10-04T21:57:07.718Z"
+}

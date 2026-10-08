@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "id": "digitalocean",
+  "name": "DigitalOcean",
+  "category": "dev",
+  "color": "#0080FF",
+  "desc": {
+    "fa": "دراپلت‌های DigitalOcean و وضعیت روشن یا خاموششان.",
+    "en": "Your DigitalOcean droplets and whether they're on or off."
+  },
+  "keyUrl": "https://cloud.digitalocean.com/account/api/tokens",
+  "docsUrl": "https://docs.digitalocean.com/reference/api/",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن دسترسی شخصی", "en": "Personal access token" },
+      "placeholder": "dop_v1_…",
+      "optional": false,
+      "pattern": "^(dop_v1_)?[a-f0-9]{64}$",
+      "help": {
+        "fa": "دسترسی «فقط خواندن» یا ⁨droplet:read⁩ کافی است.",
+        "en": "Read-only (or the droplet:read scope) is enough."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.digitalocean.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.digitalocean.com/v2/droplets",
+    "query": { "per_page": "20" }
+  },
+  "list": {
+    "path": "/droplets",
+    "max": 20,
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/region/slug",
+    "status": "/status",
+    "url": "https://cloud.digitalocean.com/droplets/{item./id}"
+  },
+  "statusMap": { "active": "ok", "new": "info", "off": "off", "archive": "off", "*": "info" },
+  "count": "/meta/total",
+  "openUrl": "https://cloud.digitalocean.com/droplets",
+  "webHosts": ["cloud.digitalocean.com"],
+  "pollEvery": 300
+}

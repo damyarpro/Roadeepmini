@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "id": "asana",
+  "name": "Asana",
+  "category": "work",
+  "color": "#F06A6A",
+  "desc": {
+    "fa": "کارهای انجام‌نشدهٔ Asana که به تو سپرده شده.",
+    "en": "Your incomplete Asana tasks in one workspace."
+  },
+  "keyUrl": "https://app.asana.com/0/my-apps",
+  "docsUrl": "https://developers.asana.com/reference/gettasks",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن دسترسی شخصی", "en": "Personal access token" },
+      "placeholder": "2/1200…",
+      "optional": false,
+      "pattern": "^[0-9]/[A-Za-z0-9:/]{20,200}$"
+    },
+    {
+      "name": "workspace",
+      "kind": "text",
+      "label": { "fa": "شناسهٔ فضای کاری", "en": "Workspace ID" },
+      "placeholder": "1200000000000000",
+      "optional": false,
+      "pattern": "^[0-9]{6,25}$",
+      "help": {
+        "fa": "وقتی وارد Asana هستی، ⁨app.asana.com/api/1.0/workspaces⁩ را باز کن؛ عدد gid همان است.",
+        "en": "While signed in to Asana, open app.asana.com/api/1.0/workspaces; the gid is the number."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["app.asana.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://app.asana.com/api/1.0/tasks",
+    "headers": { "Accept": "application/json" },
+    "query": {
+      "assignee": "me",
+      "workspace": "{field.workspace}",
+      "completed_since": "now",
+      "limit": "50",
+      "opt_fields": "name,due_on,modified_at,permalink_url"
+    }
+  },
+  "list": {
+    "path": "/data",
+    "max": 10,
+    "sort": "time",
+    "id": "/gid",
+    "title": "/name",
+    "subtitle": "/due_on",
+    "time": "/modified_at",
+    "url": "{item./permalink_url|url}"
+  },
+  "openUrl": "https://app.asana.com/",
+  "webHosts": ["app.asana.com"],
+  "pollEvery": 180,
+  "notify": { "on": "new" }
+}

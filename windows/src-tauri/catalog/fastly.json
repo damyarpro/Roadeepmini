@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "id": "fastly",
+  "name": "Fastly",
+  "category": "dev",
+  "color": "#FF282D",
+  "desc": {
+    "fa": "سرویس‌های Fastly، آن‌هایی که تازه تغییر کرده‌اند اول.",
+    "en": "Your Fastly services, most recently changed first."
+  },
+  "keyUrl": "https://manage.fastly.com/account/personal/tokens",
+  "docsUrl": "https://www.fastly.com/documentation/reference/api/",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API", "en": "API token" },
+      "placeholder": "32 characters",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9_\\-]{32}$",
+      "help": {
+        "fa": "دامنهٔ ⁨read_only⁩ کافی است.",
+        "en": "The read_only scope is enough."
+      }
+    }
+  ],
+  "auth": [{ "type": "header", "name": "Fastly-Key", "field": "token", "prefix": "" }],
+  "hosts": ["api.fastly.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.fastly.com/service",
+    "headers": { "Accept": "application/json" }
+  },
+  "list": {
+    "path": "",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/type",
+    "time": "/updated_at",
+    "url": "https://manage.fastly.com/configure/services/{item./id}"
+  },
+  "openUrl": "https://manage.fastly.com/",
+  "webHosts": ["manage.fastly.com"],
+  "pollEvery": 900
+}

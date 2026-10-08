@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "id": "zendesk",
+  "name": "Zendesk",
+  "category": "support",
+  "color": "#78A300",
+  "desc": {
+    "fa": "تیکت‌های حل‌نشدهٔ Zendesk؛ تیکت تازه که بیاید خبرت می‌کند.",
+    "en": "Unsolved Zendesk tickets; tells you when a new one comes in."
+  },
+  "keyUrl": "https://developer.zendesk.com/api-reference/introduction/security-and-auth/",
+  "docsUrl": "https://developer.zendesk.com/api-reference/ticketing/ticket-management/search/",
+  "fields": [
+    {
+      "name": "subdomain",
+      "kind": "text",
+      "label": { "fa": "زیردامنه", "en": "Subdomain" },
+      "placeholder": "mycompany",
+      "optional": false,
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "help": {
+        "fa": "بخش اول آدرس، پیش از ⁨.zendesk.com⁩",
+        "en": "The first part of the address, before .zendesk.com"
+      }
+    },
+    {
+      "name": "email",
+      "kind": "text",
+      "label": { "fa": "ایمیل و ⁨/token⁩", "en": "Email followed by /token" },
+      "placeholder": "you@company.com/token",
+      "optional": false,
+      "pattern": "^[^@\\s/:]{1,64}@[^@\\s/:]{1,255}/token$",
+      "help": {
+        "fa": "ایمیل حساب ایجنت و بلافاصله بعدش ⁨/token⁩؛ Zendesk همین را می‌خواهد.",
+        "en": "Your agent email with /token right after it; that's what Zendesk expects."
+      }
+    },
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API", "en": "API token" },
+      "placeholder": "40 characters",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9]{30,64}$",
+      "help": {
+        "fa": "در ⁨Admin Center → Apps and integrations → Zendesk API⁩ بساز.",
+        "en": "Create one in Admin Center → Apps and integrations → Zendesk API."
+      }
+    }
+  ],
+  "auth": [{ "type": "basic", "user": "email", "pass": "token" }],
+  "hosts": ["*.zendesk.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://{field.subdomain}.zendesk.com/api/v2/search.json",
+    "headers": { "Accept": "application/json" },
+    "query": {
+      "query": "type:ticket status<solved",
+      "sort_by": "updated_at",
+      "sort_order": "desc",
+      "per_page": "10"
+    }
+  },
+  "list": {
+    "path": "/results",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/subject",
+    "subtitle": "/priority",
+    "status": "/status",
+    "time": "/updated_at",
+    "url": "https://{field.subdomain}.zendesk.com/agent/tickets/{item./id}"
+  },
+  "statusMap": {
+    "new": "warn",
+    "open": "info",
+    "pending": "info",
+    "hold": "off",
+    "solved": "ok",
+    "closed": "ok",
+    "*": "info"
+  },
+  "count": "/count",
+  "openUrl": "https://{field.subdomain}.zendesk.com/agent/",
+  "webHosts": ["*.zendesk.com"],
+  "pollEvery": 120,
+  "notify": { "on": "new" }
+}

@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "id": "shopify",
+  "name": "Shopify",
+  "category": "commerce",
+  "color": "#95BF47",
+  "desc": {
+    "fa": "سفارش‌های تازهٔ فروشگاه Shopify؛ سفارش تازه که بیاید خبرت می‌کند.",
+    "en": "Latest orders in your Shopify store; tells you when a new one arrives."
+  },
+  "keyUrl": "https://help.shopify.com/en/manual/apps/app-types/custom-apps",
+  "docsUrl": "https://shopify.dev/docs/api/admin-rest/latest/resources/order",
+  "fields": [
+    {
+      "name": "store",
+      "kind": "text",
+      "label": { "fa": "نام فروشگاه", "en": "Store name" },
+      "placeholder": "my-store",
+      "optional": false,
+      "pattern": "^[a-z0-9][a-z0-9-]{0,60}$",
+      "help": {
+        "fa": "بخش اول آدرس، پیش از ⁨.myshopify.com⁩",
+        "en": "The first part of the address, before .myshopify.com"
+      }
+    },
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن دسترسی Admin API", "en": "Admin API access token" },
+      "placeholder": "shpat_…",
+      "optional": false,
+      "pattern": "^shpat_[a-f0-9]{32}$",
+      "help": {
+        "fa": "از اپ سفارشی فروشگاه، با دسترسی ⁨read_orders⁩",
+        "en": "From a custom app in your store, with the read_orders scope."
+      }
+    }
+  ],
+  "auth": [{ "type": "header", "name": "X-Shopify-Access-Token", "field": "token", "prefix": "" }],
+  "hosts": ["*.myshopify.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://{field.store}.myshopify.com/admin/api/2025-10/orders.json",
+    "headers": { "Accept": "application/json" },
+    "query": { "status": "any", "limit": "10" }
+  },
+  "list": {
+    "path": "/orders",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/total_price",
+    "status": "/financial_status",
+    "time": "/created_at",
+    "url": "https://admin.shopify.com/store/{field.store}/orders/{item./id}"
+  },
+  "statusMap": {
+    "paid": "ok",
+    "authorized": "info",
+    "partially_paid": "info",
+    "partially_refunded": "info",
+    "pending": "warn",
+    "refunded": "off",
+    "voided": "off",
+    "*": "info"
+  },
+  "openUrl": "https://admin.shopify.com/store/{field.store}/orders",
+  "webHosts": ["admin.shopify.com"],
+  "pollEvery": 180,
+  "notify": { "on": "new" }
+}

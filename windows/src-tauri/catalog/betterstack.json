@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "id": "betterstack",
+  "name": "Better Stack Uptime",
+  "category": "monitoring",
+  "color": "#5B63D3",
+  "desc": {
+    "fa": "مانیتورهای Better Stack؛ اگر سایتی از دسترس خارج شود خبرت می‌کند.",
+    "en": "Your Better Stack monitors; tells you when something goes down."
+  },
+  "keyUrl": "https://betterstack.com/docs/uptime/api/getting-started-with-uptime-api/",
+  "docsUrl": "https://betterstack.com/docs/uptime/api/list-all-existing-monitors/",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن API", "en": "API token" },
+      "placeholder": "Uptime API token",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9]{20,64}$",
+      "help": {
+        "fa": "در ⁨Settings → API tokens⁩، توکن ⁨Uptime⁩ تیم را بردار.",
+        "en": "Copy the team's Uptime token from Settings → API tokens."
+      }
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["uptime.betterstack.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://uptime.betterstack.com/api/v2/monitors",
+    "query": { "per_page": "50" }
+  },
+  "list": {
+    "path": "/data",
+    "max": 20,
+    "id": "/id",
+    "title": "/attributes/pronounceable_name",
+    "subtitle": "/attributes/url",
+    "status": "/attributes/status"
+  },
+  "statusMap": {
+    "up": "ok",
+    "down": "err",
+    "validating": "info",
+    "pending": "info",
+    "maintenance": "info",
+    "paused": "off",
+    "*": "info"
+  },
+  "openUrl": "https://uptime.betterstack.com/",
+  "webHosts": ["uptime.betterstack.com"],
+  "pollEvery": 60,
+  "notify": { "on": "status", "statuses": ["err"] }
+}

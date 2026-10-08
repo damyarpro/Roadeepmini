@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "id": "supabase",
+  "name": "Supabase",
+  "category": "dev",
+  "color": "#3ECF8E",
+  "desc": {
+    "fa": "پروژه‌های Supabase و سلامتشان؛ اگر یکی از کار بیفتد خبرت می‌کند.",
+    "en": "Your Supabase projects and their health; tells you when one goes down."
+  },
+  "keyUrl": "https://supabase.com/dashboard/account/tokens",
+  "docsUrl": "https://supabase.com/docs/reference/api/introduction",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "توکن دسترسی", "en": "Access token" },
+      "placeholder": "sbp_…",
+      "optional": false,
+      "pattern": "^sbp_[A-Za-z0-9_]{20,120}$"
+    }
+  ],
+  "auth": [{ "type": "bearer", "field": "token" }],
+  "hosts": ["api.supabase.com"],
+  "request": {
+    "method": "GET",
+    "url": "https://api.supabase.com/v1/projects",
+    "headers": { "Accept": "application/json" }
+  },
+  "list": {
+    "path": "",
+    "max": 10,
+    "id": "/id",
+    "title": "/name",
+    "subtitle": "/region",
+    "status": "/status",
+    "url": "https://supabase.com/dashboard/project/{item./id}"
+  },
+  "statusMap": {
+    "ACTIVE_HEALTHY": "ok",
+    "ACTIVE_UNHEALTHY": "err",
+    "COMING_UP": "info",
+    "RESTORING": "info",
+    "UPGRADING": "info",
+    "RESIZING": "info",
+    "GOING_DOWN": "warn",
+    "PAUSING": "off",
+    "INACTIVE": "off",
+    "REMOVED": "off",
+    "INIT_FAILED": "err",
+    "RESTORE_FAILED": "err",
+    "PAUSE_FAILED": "err",
+    "*": "info"
+  },
+  "openUrl": "https://supabase.com/dashboard/projects",
+  "webHosts": ["supabase.com"],
+  "pollEvery": 300,
+  "notify": { "on": "status", "statuses": ["err"] }
+}

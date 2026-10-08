@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "id": "wordpress",
+  "name": "WordPress",
+  "category": "content",
+  "color": "#21759B",
+  "desc": {
+    "fa": "دیدگاه‌هایی از سایت وردپرس که منتظر تأیید تواند.",
+    "en": "Comments on your WordPress site waiting for your approval."
+  },
+  "keyUrl": "https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide/",
+  "docsUrl": "https://developer.wordpress.org/rest-api/reference/comments/",
+  "fields": [
+    {
+      "name": "siteUrl",
+      "kind": "url",
+      "label": { "fa": "آدرس سایت", "en": "Site address" },
+      "placeholder": "https://blog.example.com",
+      "optional": false,
+      "pattern": "^https://[A-Za-z0-9.\\-]{1,253}(:[0-9]{2,5})?(/[A-Za-z0-9._~\\-/]*)?$"
+    },
+    {
+      "name": "username",
+      "kind": "text",
+      "label": { "fa": "نام کاربری", "en": "Username" },
+      "placeholder": "admin",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9 _.@\\-]{1,60}$"
+    },
+    {
+      "name": "appPassword",
+      "kind": "secret",
+      "label": { "fa": "رمز اپلیکیشن", "en": "Application password" },
+      "placeholder": "xxxx xxxx xxxx xxxx xxxx xxxx",
+      "optional": false,
+      "pattern": "^([A-Za-z0-9]{4} ?){5}[A-Za-z0-9]{4}$",
+      "help": {
+        "fa": "در پیشخوان: ⁨Users → Profile → Application Passwords⁩. رمز اصلی‌ات را اینجا نگذار.",
+        "en": "In the dashboard: Users → Profile → Application Passwords. Not your login password."
+      }
+    }
+  ],
+  "auth": [{ "type": "basic", "user": "username", "pass": "appPassword" }],
+  "hosts": ["{field.siteUrl}"],
+  "request": {
+    "method": "GET",
+    "url": "{field.siteUrl|base}/wp-json/wp/v2/comments",
+    "headers": { "Accept": "application/json" },
+    "query": { "status": "hold", "per_page": "10" }
+  },
+  "list": {
+    "path": "",
+    "max": 10,
+    "sort": "time",
+    "id": "/id",
+    "title": "/author_name",
+    "status": "/status",
+    "time": "/date_gmt",
+    "url": "{item./link|url}"
+  },
+  "statusMap": { "hold": "warn", "approved": "ok", "spam": "off", "trash": "off", "*": "info" },
+  "openUrl": "{field.siteUrl|base}/wp-admin/edit-comments.php?comment_status=moderated",
+  "webHosts": ["{field.siteUrl}"],
+  "pollEvery": 600,
+  "notify": { "on": "new" }
+}

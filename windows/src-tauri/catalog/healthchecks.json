@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "id": "healthchecks",
+  "name": "Healthchecks.io",
+  "category": "monitoring",
+  "color": "#3BAA5E",
+  "desc": {
+    "fa": "کرون‌جاب‌ها و چک‌های Healthchecks.io؛ اگر یکی ساکت بماند خبرت می‌کند.",
+    "en": "Your Healthchecks.io cron checks; tells you when one goes down."
+  },
+  "keyUrl": "https://healthchecks.io/docs/api/",
+  "docsUrl": "https://healthchecks.io/docs/api/",
+  "fields": [
+    {
+      "name": "token",
+      "kind": "secret",
+      "label": { "fa": "کلید API", "en": "API key" },
+      "placeholder": "32 characters",
+      "optional": false,
+      "pattern": "^[A-Za-z0-9_\\-]{32}$",
+      "help": {
+        "fa": "در تنظیمات پروژه، کلید «فقط خواندن» بساز.",
+        "en": "Create a read-only key in the project settings."
+      }
+    }
+  ],
+  "auth": [{ "type": "header", "name": "X-Api-Key", "field": "token", "prefix": "" }],
+  "hosts": ["healthchecks.io"],
+  "request": {
+    "method": "GET",
+    "url": "https://healthchecks.io/api/v3/checks/"
+  },
+  "list": {
+    "path": "/checks",
+    "max": 20,
+    "id": "/name",
+    "title": "/name",
+    "subtitle": "/tags",
+    "status": "/status",
+    "time": "/last_ping"
+  },
+  "statusMap": {
+    "up": "ok",
+    "grace": "warn",
+    "down": "err",
+    "paused": "off",
+    "new": "info",
+    "started": "info",
+    "*": "info"
+  },
+  "openUrl": "https://healthchecks.io/",
+  "webHosts": ["healthchecks.io"],
+  "pollEvery": 60,
+  "notify": { "on": "status", "statuses": ["err"] }
+}
