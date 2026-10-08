@@ -93,6 +93,12 @@ const TOOL_LABEL_KEYS: Record<string, string> = {
   Grep: "tool.search",
   WebSearch: "tool.webSearch",
   WebFetch: "tool.fetch",
+  run_command: "tool.run",
+  view_file: "tool.read",
+  write_to_file: "tool.write",
+  replace_file_content: "tool.edit",
+  read_url_content: "tool.fetch",
+  search_web: "tool.webSearch",
   TodoWrite: "tool.tasks",
   Task: "tool.agent",
   LS: "tool.list",
@@ -161,6 +167,7 @@ function clearSession(provider: CodingProvider, taskId: string) {
   // Back to the pill's own name: Roadeep's for Claude Code, the agent's otherwise.
   t.name = provider === "claude" ? "Roadeep" : CODING_PROVIDERS[provider];
   t.pillBadge = null;
+  t.sessionId = null;
 }
 
 /**
@@ -214,6 +221,7 @@ export function handleHook(island: Island, payload: HookPayload) {
     State.tasks.push({id:taskId,name:CODING_PROVIDERS[provider],color:"#F5F6F8",state:"idle",steps:[],stepIndex:0,source:"agent",isIntegration:true,directHook:true});
   }
   State.tasks.find(task=>task.id===taskId)!.directHook=true;
+  if (payload.session_id) State.tasks.find(task=>task.id===taskId)!.sessionId = payload.session_id;
   observeCodingHook(payload);
 
   // The turn that asked for a permission is over — answered in the terminal,

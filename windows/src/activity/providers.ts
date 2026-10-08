@@ -1,7 +1,7 @@
 export const CODING_PROVIDERS = {
   claude: "Claude Code", codex: "Codex", gemini: "Gemini CLI", cursor: "Cursor",
   windsurf: "Windsurf", copilot: "GitHub Copilot", vscode: "VS Code", cline: "Cline",
-  kiro: "Kiro", opencode: "OpenCode", hermes: "Hermes",
+  kiro: "Kiro", opencode: "OpenCode", hermes: "Hermes", antigravity: "Antigravity",
 } as const;
 export type CodingProvider = keyof typeof CODING_PROVIDERS;
 export function isCodingProvider(value: unknown): value is CodingProvider {

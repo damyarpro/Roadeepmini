@@ -143,6 +143,11 @@ pub struct Settings {
     /// Global shortcut that opens the island chat, e.g. "Ctrl+Alt+Space"; "" = off.
     #[serde(default = "default_shortcut")]
     pub shortcut: String,
+    /// The other global shortcuts the user changed (Settings → Shortcuts), by
+    /// action id; the rest keep their default (shortcuts.rs). A malformed
+    /// value reads as none instead of failing the whole file.
+    #[serde(default, deserialize_with = "crate::shortcuts::lenient_bindings")]
+    pub shortcuts: crate::shortcuts::Bindings,
     /// Look for a new version once a day (only in builds with the updater, see updater.rs).
     #[serde(default = "default_true")]
     pub auto_update_check: bool,
@@ -357,6 +362,7 @@ impl Default for Settings {
             chat_tools: true,
             agent_colors: BTreeMap::new(),
             shortcut: default_shortcut(),
+            shortcuts: crate::shortcuts::Bindings::new(),
             auto_update_check: true,
             dock: Dock::default(),
             default_agents_version: 0,
@@ -447,6 +453,12 @@ pub fn migrate(settings: &mut Settings) -> bool {
     let shortcut = crate::shortcut::sanitize(&settings.shortcut);
     if shortcut != settings.shortcut {
         settings.shortcut = shortcut;
+        changed = true;
+    }
+    // Known actions only (not the chat: that is `shortcut`), keys in one spelling.
+    let shortcuts = crate::shortcuts::sanitize(&settings.shortcuts);
+    if shortcuts != settings.shortcuts {
+        settings.shortcuts = shortcuts;
         changed = true;
     }
     let absence = sanitize_absence(settings.absence_interval);
@@ -898,6 +910,40 @@ mod tests {
             assert!(migrate(&mut s), "{bad}");
             assert_eq!(s.shortcut, crate::shortcut::DEFAULT_ACCELERATOR, "{bad}");
         }
+    }
+
+    #[test]
+    fn the_other_shortcuts_load_from_any_file_and_are_cleaned() {
+        use crate::shortcuts::Binding;
+        let older = r#"{"soundEnabled":true,"soundVolume":0.1,"autoCloseInterval":15,"absenceInterval":300,
+            "activeIntegrations":[],"screen":"primary","autostart":false,"hooksInstalled":false}"#;
+        let mut s: Settings = serde_json::from_str(older).unwrap();
+        assert!(s.shortcuts.is_empty(), "a file from before them: every action keeps its default");
+        assert!(!migrate(&mut s));
+
+        // A malformed value costs the shortcuts, never the other preferences.
+        let mut value = serde_json::to_value(Settings::default()).unwrap();
+        value["soundEnabled"] = serde_json::json!(false);
+        for wrong in [serde_json::json!("Ctrl+Alt+A"), serde_json::json!([1]), serde_json::Value::Null] {
+            value["shortcuts"] = wrong;
+            let loaded: Settings = serde_json::from_value(value.clone()).unwrap();
+            assert!(loaded.shortcuts.is_empty());
+            assert!(!loaded.sound_enabled);
+        }
+
+        value["shortcuts"] = serde_json::json!({
+            "goToAlert": {"keys": "alt+ctrl+g", "enabled": true},
+            "openChat": {"keys": "Ctrl+Alt+KeyQ", "enabled": true},
+            "nope": {"keys": "Ctrl+Alt+KeyX", "enabled": true},
+            "muteToggle": {"keys": "Shift+KeyM", "enabled": true}
+        });
+        let mut s: Settings = serde_json::from_value(value).unwrap();
+        assert!(migrate(&mut s));
+        let kept: Vec<(&str, &Binding)> = s.shortcuts.iter().map(|(id, b)| (id.as_str(), b)).collect();
+        assert_eq!(kept, [("goToAlert", &Binding { keys: "Ctrl+Alt+KeyG".into(), enabled: true })]);
+        assert!(!migrate(&mut s), "idempotent");
+        let saved = serde_json::to_value(&s).unwrap();
+        assert_eq!(saved["shortcuts"], serde_json::json!({"goToAlert": {"keys": "Ctrl+Alt+KeyG", "enabled": true}}));
     }
     #[test]
     fn voice_mode_defaults_and_invalid_saved_value_fails_safe() {

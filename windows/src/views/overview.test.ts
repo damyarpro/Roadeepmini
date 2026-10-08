@@ -3,7 +3,7 @@ import { State,type AgentTask } from "../core/state";
 import { setLanguage,t } from "../core/i18n";
 import { buildOverview,type ViewActions } from "./views";
 import { renderIntegrationCard } from "./integrations";
-const actions=()=>({setView:vi.fn(),collapse:vi.fn(),setFocus:vi.fn(),openTerminal:vi.fn(),openTarget:vi.fn(),openUrl:vi.fn(),decide:vi.fn(),toggleSound:vi.fn(),setVolume:vi.fn(),setAutoClose:vi.fn(),openSettingsWindow:vi.fn(),blip:vi.fn(),toggleMaximize:vi.fn()} satisfies ViewActions);
+const actions=()=>({setView:vi.fn(),collapse:vi.fn(),foldApproval:vi.fn(),setFocus:vi.fn(),openTerminal:vi.fn(),openTarget:vi.fn(),openUrl:vi.fn(),decide:vi.fn(),answer:vi.fn(),answerInTerminal:vi.fn(),toggleSound:vi.fn(),setVolume:vi.fn(),setAutoClose:vi.fn(),openSettingsWindow:vi.fn(),blip:vi.fn(),toggleMaximize:vi.fn()} satisfies ViewActions);
 const task=(state:AgentTask["state"],steps=["Codex","Read file"]):AgentTask=>({id:"integration_codex",name:"Codex · project",color:"#F5F6F8",state,steps,stepIndex:steps.length-1,source:"agent",isIntegration:true});
 beforeEach(()=>{setLanguage("en");State.tasks=[];State.integrations={};State.focusId=null;});
 describe("coding overview credential boundary",()=>{

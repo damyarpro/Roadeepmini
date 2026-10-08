@@ -11,6 +11,7 @@ import type { DockLayout } from "./island/dock";
 import { Island } from "./island/island";
 import { registerHookHandlers } from "./island/hooks";
 import { registerIntegrationHandlers, refreshConfigured } from "./island/integrations";
+import { registerShortcutHandlers } from "./island/shortcuts";
 import { getLanguage, loadFonts, normalizeLanguage, setLanguage, t } from "./core/i18n";
 import { installContextMenu, quitEntry } from "./core/context-menu";
 import { seedDemoChat } from "./island/dev-preview";
@@ -149,6 +150,7 @@ async function main() {
   });
 
   registerIntegrationHandlers(island);
+  registerShortcutHandlers(island, () => setPaused(false));
 
   island.launch();
 

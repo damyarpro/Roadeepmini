@@ -22,6 +22,12 @@
   z-index: 2;
 }
 
+/* The who row of a card that has the fold button keeps clear of it (in
+   Persian the row starts right under it). */
+.card-who {
+  padding-inline-end: 22px;
+}
+
 /* Options to pick from when Claude Code asks a question. */
 .actions.options {
   flex-wrap: wrap;

@@ -25,6 +25,7 @@ mod roadeep;
 mod secrets;
 mod settings;
 mod shortcut;
+mod shortcuts;
 mod tray;
 mod updater;
 mod util;
@@ -363,6 +364,24 @@ fn approval_decision(window: tauri::Window, app: AppHandle, request_id: String, 
     pipe::authorize_reply(window.label(), &request_id, Some(&decision))?;
     pipe::answer(&app, &request_id, &decision);
     Ok(())
+}
+
+/// Answers to a question Claude Code asked, picked on the island: one per
+/// question, by position (pipe::question_answers_line). Answers of the wrong
+/// shape hand the request back to the terminal at once.
+#[tauri::command]
+fn approval_answer(window: tauri::Window, app: AppHandle, request_id: String, answers: serde_json::Value) -> Result<(), String> {
+    pipe::authorize_reply(window.label(), &request_id, None)?;
+    match pipe::question_answers_line(&answers) {
+        Ok(line) => {
+            pipe::answer_question(&app, &request_id, line);
+            Ok(())
+        }
+        Err(err) => {
+            pipe::decline(&app, &request_id);
+            Err(err)
+        }
+    }
 }
 
 /// The island has the card on screen, so the long wait for a human may begin.
@@ -763,6 +782,7 @@ pub fn run() {
             mcp_preview,
             mcp_apply,
             approval_decision,
+            approval_answer,
             approval_ack,
             approval_decline,
             log_line,
@@ -811,6 +831,9 @@ pub fn run() {
             set_paused,
             shortcut::shortcut_status,
             shortcut::shortcut_check,
+            shortcuts::shortcuts_status,
+            shortcuts::shortcuts_suspend,
+            shortcuts::session_window::open_session,
             updater::update_status,
             updater::update_check,
             updater::update_install,

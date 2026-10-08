@@ -12,7 +12,7 @@ let voiceView=():IslandViewName|null=>null;
 export function setVoiceApprovalProbe(probe:()=>IslandViewName|null){voiceView=probe;}
 export function approvalPending(){return !!State.pendingApproval||voiceView()!==null;}
 /** Where a new live-voice approval may open now: never over a coding-agent card that is on screen (it keeps priority). */
-export function voiceMayTakeFocus(){return !(State.pendingApproval&&State.view==="approval");}
+export function voiceMayTakeFocus(){return !(State.pendingApproval&&(State.view==="approval"||State.view==="question"));}
 /** One card cleared (`cleared` is the view it was shown on). Planner pages stay put so the result stays visible. */
 export function approvalCleared(island:FocusIsland,cleared:IslandViewName){
  if(State.pendingApproval){State.isPinned=true;island.alert("approval");return;}

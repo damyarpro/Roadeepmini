@@ -19,7 +19,6 @@ import { mcpServersSection } from "./mcp-servers";
 import { installContextMenu, quitEntry } from "../core/context-menu";
 import { followTextDirection, helpDisclosure, icon, linkButton, sectionHead, settingRow, statusBadge, switchEl } from "./ui";
 import { localizeError } from "../core/error-text";
-import { BridgeMisc } from "../core/bridge-misc";
 import { BridgeInt, POLL_STATUS_EVENT, type PollStatus } from "../core/bridge-int";
 import { timeAgo } from "../views/integrations";
 import { updateRows } from "./update-row";
@@ -34,6 +33,7 @@ import { appearanceRows, refreshAppearance } from "./appearance";
 import { normalizeAppearance } from "../character/appearance";
 import { assistantSettingsSection } from "./assistant-settings";
 import { settingsDashboard, settingsDestination, categoryAnchor as anchorId, type SettingsDestination } from "./dashboard";
+import { initShortcutsSection, refreshShortcutsSection, shortcutsSection } from "./shortcuts-section";
 
 const ROADEEP_SITE = "https://roadeep.com";
 
@@ -767,146 +767,6 @@ const LANGUAGES: [Language, string][] = [
   ["en", "English"],
 ];
 
-/** "Ctrl+Alt+KeyK" → ["Ctrl", "Alt", "K"]: the names printed on the keys. */
-function keyNames(accelerator: string): string[] {
-  return accelerator.split("+").filter(Boolean).map((part) =>
-    part === "Super" ? t("misc.keyWin")
-      : /^Key[A-Z]$/.test(part) ? part.slice(3)
-      : /^Digit\d$/.test(part) ? part.slice(5)
-      : part.replace(/^Arrow/, ""),
-  );
-}
-
-/** Keycaps Ctrl + Alt + K, always left to right. */
-function keycaps(accelerator: string, pending = false): HTMLElement {
-  const box = h("span", { class: "keycaps", dir: "ltr" });
-  const names = keyNames(accelerator);
-  names.forEach((name, i) => {
-    if (i > 0) box.append(h("span", { class: "keycap-plus", "aria-hidden": "true", text: "+" }));
-    box.append(h("kbd", { text: name }));
-  });
-  if (pending) box.append(h("span", { class: "keycap-plus", "aria-hidden": "true", text: names.length ? "+ …" : "…" }));
-  return box;
-}
-
-/** The accelerator a keydown describes, or null while only modifiers are down. */
-function acceleratorFrom(e: KeyboardEvent): { combo: string; complete: boolean } {
-  const mods = [e.ctrlKey && "Ctrl", e.altKey && "Alt", e.shiftKey && "Shift", e.metaKey && "Super"].filter(Boolean) as string[];
-  const modifierOnly = ["Control", "Alt", "Shift", "Meta", "OS", "AltGraph"].includes(e.key);
-  if (modifierOnly || !e.code) return { combo: mods.join("+"), complete: false };
-  return { combo: [...mods, e.code].join("+"), complete: true };
-}
-
-/**
- * Global chat shortcut: a key recorder (click, press the combination; Esc
- * cancels, Backspace turns it off) and whether Windows gave it to us.
- */
-function shortcutRow(): HTMLElement {
-  const badgeSlot = h("span", { class: "sec-badge" });
-  const hint = h("span", { class: "set-hint", id: "gen-shortcut-hint", hidden: true });
-  const message = h("div", { class: "field-err", role: "alert", dir: "auto" });
-  const live = h("span", { class: "sr-only", role: "status", "aria-live": "polite" });
-  const recorder = h("button", {
-    type: "button", class: "shortcut-rec", id: "gen-shortcut", "aria-describedby": "gen-shortcut-hint",
-  }) as HTMLButtonElement;
-  let recording = false;
-
-  const showCurrent = () => {
-    clear(recorder);
-    recorder.classList.toggle("recording", recording);
-    recorder.setAttribute("aria-pressed", recording ? "true" : "false");
-    hint.hidden = !recording;
-    hint.textContent = recording ? t("misc.shortcutRecordingHint") : "";
-    if (recording) {
-      recorder.append(h("span", { text: t("misc.shortcutRecording") }));
-      recorder.setAttribute("aria-label", t("misc.shortcutRecording"));
-      return;
-    }
-    const combo = settings.shortcut;
-    recorder.append(combo ? keycaps(combo) : h("span", { text: t("misc.shortcutNone") }));
-    recorder.setAttribute("aria-label", t("misc.shortcutLabel", { combo: combo ? keyNames(combo).join(" + ") : t("misc.shortcutNone") }));
-  };
-
-  const refreshStatus = async () => {
-    const status = await BridgeMisc.shortcutStatus();
-    clear(badgeSlot);
-    if (!status) return;
-    if (!status.accelerator) badgeSlot.append(statusBadge("off", t("misc.shortcutOff")));
-    else if (status.registered) badgeSlot.append(statusBadge("ok", t("misc.shortcutActive")));
-    else badgeSlot.append(statusBadge("err", status.error ? localizeError(status.error) : t("misc.shortcutTaken")));
-  };
-
-  const stop = () => {
-    recording = false;
-    showCurrent();
-  };
-
-  const store = async (accelerator: string) => {
-    settings.shortcut = accelerator;
-    stop();
-    await save();
-    await refreshStatus();
-    live.textContent = accelerator
-      ? t("misc.shortcutSaved", { combo: keyNames(accelerator).join(" + ") })
-      : t("misc.shortcutCleared");
-  };
-
-  recorder.addEventListener("click", () => {
-    if (recording) return;
-    message.textContent = "";
-    recording = true;
-    showCurrent();
-  });
-  recorder.addEventListener("blur", () => {
-    if (recording) stop();
-  });
-  recorder.addEventListener("keydown", (e) => {
-    if (!recording) return;
-    if (e.key === "Tab") {
-      stop();
-      return;
-    }
-    e.preventDefault();
-    e.stopPropagation();
-    const plain = !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey;
-    if (plain && e.key === "Escape") {
-      stop();
-      return;
-    }
-    if (plain && (e.key === "Backspace" || e.key === "Delete")) {
-      void store("");
-      return;
-    }
-    const { combo, complete } = acceleratorFrom(e);
-    if (!complete) {
-      clear(recorder);
-      recorder.append(keycaps(combo, true));
-      return;
-    }
-    void (async () => {
-      const check = await BridgeMisc.shortcutCheck(combo);
-      if (!recording) return;
-      if (check && !check.ok) {
-        message.textContent = check.error ? localizeError(check.error) : t("err.shortcut.invalid");
-        stop();
-        void Bridge.log("settings: shortcut refused by the check");
-        return;
-      }
-      message.textContent = "";
-      // Outside the app there is nothing to check against; keep what was typed.
-      await store(check?.accelerator || combo);
-    })();
-  });
-
-  showCurrent();
-  void refreshStatus();
-  return settingRow(
-    { label: t("misc.shortcut"), hint: t("misc.shortcutHint"), forId: "gen-shortcut", extra: h("div", {}, hint, message, live) },
-    badgeSlot,
-    recorder,
-  );
-}
-
 /** Redraws the position row from `settings.dock` (a drag on the island changes it). */
 let refreshPosition: (() => void) | null = null;
 
@@ -1065,7 +925,6 @@ function generalSection(): HTMLElement {
       settingRow({ label: t("general.autostart") },
         switchEl(settings.autostart, false, t("general.autostart"), (v) => { settings.autostart = v; void save(); }),
       ),
-      shortcutRow(),
       ...updateRows({ settings: () => settings, save, version: () => version }),
     ),
   );
@@ -1106,6 +965,7 @@ function render() {
       mcpServers: h("div", { class: "sec-wrap", id: anchorId("mcpServers") }, mcpServersSection({ settings: () => settings, save })),
       assistant: h("div", { class: "sec-wrap", id: anchorId("assistant") }, assistantSettingsSection(undefined,{settings:()=>settings})),
       general: h("div", { class: "sec-wrap", id: anchorId("general") }, generalSection()),
+      shortcuts: h("div", { class: "sec-wrap", id: anchorId("shortcuts") }, shortcutsSection({ settings: () => settings, save })),
     },
   });
   root.append(dashboard.element);
@@ -1135,6 +995,7 @@ async function main() {
   initPills(host);
   initRoadeepSections(host);
   initAgentsSection(host);
+  initShortcutsSection();
 
   catalogDefs = (await loadCatalog()).map(catalogDef).filter((d): d is IntegrationDef => d !== null);
   // Every hand-coded service (as before), but only the catalog services in use.
@@ -1170,6 +1031,7 @@ async function main() {
       refreshPosition?.();
       refreshPlannerSection();
       refreshAppearance();
+      refreshShortcutsSection();
       // Rust drops ids it doesn't know; the list follows what it kept.
       if (settings.addedIntegrations.join() !== addedBefore) {
         void loadKeys(allDefs().filter((d) => isAdded(d.id))).then(redrawIntegrations);

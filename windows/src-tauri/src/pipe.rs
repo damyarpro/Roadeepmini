@@ -13,9 +13,14 @@
 //   * whatever happens we drop the connection after the decision timeout, and
 //     the terminal takes over.
 //
-// What we write back is the bare word `allow` or `deny`. Turning that into the
-// documented hookSpecificOutput JSON is roadeep-hook's job, so the wire format
-// Claude Code expects lives in exactly one place.
+// What we write back is the bare word `allow` or `deny` — or, when Claude Code
+// asked a question, `{"answers":[…]}` with what was picked on the island, by
+// position. Turning either into the documented hookSpecificOutput JSON is
+// roadeep-hook's job, so the wire format Claude Code expects lives in exactly
+// one place.
+//
+// A card folded away on the island is still waiting: only a click, a decline
+// or the timeout ends a request.
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -28,6 +33,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::windows::named_pipe::{NamedPipeServer, ServerOptions};
 use tokio::sync::mpsc;
 
+use crate::coding_hooks::protocol;
 use crate::island::WINDOW_LABEL;
 use crate::log;
 
@@ -45,7 +51,7 @@ static CONNECTIONS: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(6
 pub enum Reply {
     /// The card is on screen and a human can act on it.
     Ack,
-    /// A human clicked: `allow` or `deny`.
+    /// A human clicked: `allow` or `deny`, or a question's `{"answers":[…]}` line.
     Decision(String),
     /// Nobody can act on it — paused, or another request already holds the card.
     Decline,
@@ -61,6 +67,34 @@ pub fn authorize_reply(window: &str, request: &str, decision: Option<&str>) -> R
         return Err("hook-invalid-reply".into());
     }
     Ok(())
+}
+
+/// The island's answers to Claude Code's question as the one line the relay
+/// reads: `{"answers":[…]}`, one entry per question in order — an option index,
+/// or a non-empty list of distinct indexes for a multi-select question. Only the
+/// shape is checked here: whether the answers fit the questions is roadeep-hook's
+/// call, as it holds the questions exactly as Claude Code asked them.
+pub fn question_answers_line(answers: &Value) -> Result<String, String> {
+    let index = |v: &Value| v.as_u64().is_some_and(|i| i < protocol::MAX_OPTIONS as u64);
+    let fits = |a: &Value| match a {
+        Value::Number(_) => index(a),
+        Value::Array(list) => {
+            let mut seen: Vec<u64> = list.iter().filter_map(Value::as_u64).collect();
+            seen.sort_unstable();
+            seen.dedup();
+            !list.is_empty() && list.iter().all(index) && seen.len() == list.len()
+        }
+        _ => false,
+    };
+    match answers.as_array() {
+        Some(list) if !list.is_empty() && list.len() <= protocol::MAX_QUESTIONS && list.iter().all(fits) => {
+            Ok(json!({ "answers": list }).to_string())
+        }
+        _ => {
+            log::line("hook outcome=invalid-answers");
+            Err("hook-invalid-reply".into())
+        }
+    }
 }
 
 static COUNTER: AtomicU64 = AtomicU64::new(1);
@@ -222,11 +256,11 @@ async fn handle(app: AppHandle, mut pipe: NamedPipeServer) {
 
     let provider = payload.get("provider").and_then(Value::as_str).unwrap_or("claude").to_string();
     let original = payload.get("original_event").or_else(||payload.get("hook_event_name")).and_then(Value::as_str).unwrap_or_default().to_string();
-    let Some(normalized) = crate::coding_hooks::protocol::normalize(&payload, &provider, &original) else { return; };
+    let Some(normalized) = protocol::normalize(&payload, &provider, &original) else { return; };
     payload = normalized;
-    fn redact(v:&mut Value) { match v {Value::String(s)=>*s=crate::coding::clean(s,2000),Value::Array(a)=>a.iter_mut().for_each(redact),Value::Object(m)=>m.values_mut().for_each(redact),_=>{}} }
-    redact(&mut payload);
+    redact_payload(&mut payload);
     let event = payload["hook_event_name"].as_str().unwrap_or_default().to_string();
+    crate::shortcuts::session_window::note(&pipe, &payload, &event);
 
     if event != "PermissionRequest" {
         log::line(format!("hook provider={provider} event={event}"));
@@ -264,13 +298,82 @@ async fn handle(app: AppHandle, mut pipe: NamedPipeServer) {
     }
 }
 
+/// Longest edit string the island gets for the live diff, in characters (the
+/// relay already caps them at 256 KB).
+const MAX_DIFF_FIELD_CHARS: usize = 256 * 1024;
+
+/// Masks secrets and caps every string before the island sees it. The edit text
+/// of a finished Claude Code edit keeps its length, as the live diff needs it
+/// whole; when masking or the cap changed it, the payload says the diff cannot
+/// be trusted (protocol::DIFF_TRUNCATED).
+fn redact_payload(payload: &mut Value) {
+    let keeps_diff = protocol::keeps_diff(
+        payload["provider"].as_str().unwrap_or_default(),
+        payload["hook_event_name"].as_str().unwrap_or_default(),
+        payload["tool_name"].as_str(),
+    );
+    let input = if keeps_diff {
+        payload.as_object_mut().and_then(|map| map.remove("tool_input"))
+    } else {
+        None
+    };
+    redact(payload);
+    if let Some(mut input) = input {
+        let mut changed = false;
+        redact_diff(&mut input, &mut changed);
+        if let Some(map) = payload.as_object_mut() {
+            map.insert("tool_input".into(), input);
+            if changed {
+                map.insert(protocol::DIFF_TRUNCATED.into(), Value::Bool(true));
+            }
+        }
+    }
+}
+
+fn redact(v: &mut Value) {
+    match v {
+        Value::String(s) => *s = crate::coding::clean(s, 2000),
+        Value::Array(a) => a.iter_mut().for_each(redact),
+        Value::Object(m) => m.values_mut().for_each(redact),
+        _ => {}
+    }
+}
+
+/// `tool_input` of a finished edit: the edit strings are masked like the rest
+/// but keep their length; anything else gets the ordinary cap.
+fn redact_diff(v: &mut Value, changed: &mut bool) {
+    match v {
+        Value::Object(map) => {
+            for (key, value) in map.iter_mut() {
+                match value {
+                    Value::String(s) if protocol::DIFF_FIELDS.contains(&key.as_str()) => {
+                        let cleaned = crate::coding::clean(s, MAX_DIFF_FIELD_CHARS);
+                        // clean() also drops control characters, the \r of CRLF
+                        // files among them; that leaves the lines as they were.
+                        let kept: String =
+                            s.chars().filter(|c| !c.is_control() || matches!(c, '\n' | '\t')).collect();
+                        if cleaned != kept {
+                            *changed = true;
+                        }
+                        *s = cleaned;
+                    }
+                    _ => redact_diff(value, changed),
+                }
+            }
+        }
+        Value::Array(items) => items.iter_mut().for_each(|item| redact_diff(item, changed)),
+        Value::String(s) => *s = crate::coding::clean(s, 2000),
+        _ => {}
+    }
+}
+
 /// Two waits: a short one for "the card is up", then the long one for a human.
 async fn wait_for_decision(id: &str, rx: &mut mpsc::Receiver<Reply>) -> Option<String> {
     match tokio::time::timeout(ACK_TIMEOUT, rx.recv()).await {
         Ok(Some(Reply::Ack)) => {}
         // A click that beats the ack is still a click.
         Ok(Some(Reply::Decision(d))) => {
-            log::line(format!("hook id={id} answered {d}"));
+            log::line(format!("hook id={id} answered {}", loggable(&d)));
             return Some(d);
         }
         Ok(Some(Reply::Decline)) => {
@@ -286,7 +389,7 @@ async fn wait_for_decision(id: &str, rx: &mut mpsc::Receiver<Reply>) -> Option<S
 
     match tokio::time::timeout(DECISION_TIMEOUT, rx.recv()).await {
         Ok(Some(Reply::Decision(d))) => {
-            log::line(format!("hook id={id} answered {d}"));
+            log::line(format!("hook id={id} answered {}", loggable(&d)));
             Some(d)
         }
         Ok(Some(Reply::Decline)) => {
@@ -298,6 +401,11 @@ async fn wait_for_decision(id: &str, rx: &mut mpsc::Receiver<Reply>) -> Option<S
             None
         }
     }
+}
+
+/// The log says a question was answered, never with what.
+fn loggable(decision: &str) -> &str {
+    if decision.starts_with('{') { "a question" } else { decision }
 }
 
 fn send(app: &AppHandle, request_id: &str, reply: Reply, keep: bool) {
@@ -336,6 +444,13 @@ pub fn answer(app: &AppHandle, request_id: &str, decision: &str) {
     send(app, request_id, Reply::Decision(word.to_string()), false);
 }
 
+/// Called when the island answers a question Claude Code asked. `line` comes
+/// from `question_answers_line`; roadeep-hook checks it against the questions.
+pub fn answer_question(app: &AppHandle, request_id: &str, line: String) {
+    log::line(format!("decision id={request_id} answered a question"));
+    send(app, request_id, Reply::Decision(line), false);
+}
+
 #[cfg(test)] mod tests {
     use super::*;
     #[test] fn replies_require_island_and_bounded_known_decisions() {
@@ -353,5 +468,57 @@ pub fn answer(app: &AppHandle, request_id: &str, decision: &str) {
     #[tokio::test] async fn acknowledgement_only_does_not_grant_and_explicit_click_does() {
         let (tx,mut rx)=mpsc::channel(4);tx.send(Reply::Ack).await.unwrap();drop(tx);assert!(wait_for_decision("fixture",&mut rx).await.is_none());
         let (tx,mut rx)=mpsc::channel(4);tx.send(Reply::Ack).await.unwrap();tx.send(Reply::Decision("deny".into())).await.unwrap();assert_eq!(wait_for_decision("fixture",&mut rx).await,Some("deny".into()));
+    }
+
+    #[test]
+    fn question_answers_go_back_as_one_line_by_position() {
+        assert_eq!(question_answers_line(&json!([1, [0, 2]])).unwrap(), r#"{"answers":[1,[0,2]]}"#);
+        for bad in [
+            json!([]),
+            json!({ "Which one?": "A" }),
+            json!(["A"]),
+            json!([-1]),
+            json!([1.5]),
+            json!([protocol::MAX_OPTIONS]),
+            json!([[]]),
+            json!([[1, 1]]),
+            json!([[1, "2"]]),
+            json!([null]),
+            json!(vec![0; protocol::MAX_QUESTIONS + 1]),
+        ] {
+            assert!(question_answers_line(&bad).is_err(), "{bad}");
+        }
+        // The log never carries the answers.
+        assert_eq!(loggable(r#"{"answers":[1]}"#), "a question");
+        assert_eq!(loggable("deny"), "deny");
+    }
+
+    #[tokio::test] async fn an_answered_question_is_a_decision() {
+        let line = question_answers_line(&json!([0])).unwrap();
+        let (tx,mut rx)=mpsc::channel(4);tx.send(Reply::Ack).await.unwrap();tx.send(Reply::Decision(line.clone())).await.unwrap();
+        assert_eq!(wait_for_decision("fixture",&mut rx).await,Some(line));
+    }
+
+    fn edit(input: Value) -> Value {
+        protocol::normalize(&json!({ "tool_name": "Edit", "tool_input": input, "cwd": "C:/p" }), "claude", "PostToolUse").unwrap()
+    }
+
+    #[test]
+    fn a_finished_edit_keeps_its_text_and_says_when_it_was_masked() {
+        let crlf = "fn a() {}\r\n".repeat(1_000);
+        let mut v = edit(json!({ "file_path": "a.rs", "old_string": crlf, "new_string": "x" }));
+        redact_payload(&mut v);
+        assert_eq!(v["tool_input"]["old_string"].as_str().unwrap(), "fn a() {}\n".repeat(1_000));
+        assert!(v.get(protocol::DIFF_TRUNCATED).is_none(), "dropping \\r changes no line");
+
+        let mut v = edit(json!({ "old_string": "token = \"abcdefgh12345\"", "new_string": "y" }));
+        redact_payload(&mut v);
+        assert!(v["tool_input"]["old_string"].as_str().unwrap().contains("[redacted]"));
+        assert_eq!(v[protocol::DIFF_TRUNCATED], true);
+
+        // Before it happens, the same text is not even forwarded; other strings keep the cap.
+        let mut v = protocol::normalize(&json!({ "tool_name": "Bash", "tool_input": { "command": "x".repeat(5_000) } }), "claude", "PostToolUse").unwrap();
+        redact_payload(&mut v);
+        assert!(v["tool_input"]["command"].as_str().unwrap().chars().count() <= 2_000 + "\n[truncated]".len());
     }
 }

@@ -3241,7 +3241,7 @@ dependencies = [
 
 [[package]]
 name = "roadeep"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "bzip2",
  "futures-util",
@@ -3271,7 +3271,7 @@ dependencies = [
 
 [[package]]
 name = "roadeep-hook"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "serde_json",
  "windows 0.61.3",
@@ -3279,7 +3279,7 @@ dependencies = [
 
 [[package]]
 name = "roadeep-mcp"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "serde_json",
  "windows 0.61.3",

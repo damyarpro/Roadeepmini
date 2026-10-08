@@ -9,6 +9,7 @@ import { h, svg, clear, dot } from "./dom";
 import { ICONS } from "./icons";
 import { State, isHexColor, type AgentTask } from "../core/state";
 import { Bridge, LOCAL_AGENT_PREFIX } from "../core/bridge";
+import { BridgeShortcuts } from "../core/bridge-shortcuts";
 import { dateLocale, formatNumber, t } from "../core/i18n";
 import { localizeError } from "../core/error-text";
 import { catalogOpenUrl, isWebUrl } from "../core/catalog";
@@ -89,7 +90,7 @@ function idleCard(task: AgentTask, openSettings: () => void): HTMLElement {
         class: "link-btn",
         style: `color:${task.color}b3`,
         text: t("int.openVSCode"),
-        onclick: () => void Bridge.openInVSCode(task.sessionCwd ?? null),
+        onclick: () => void BridgeShortcuts.openSession(task.sessionId ?? null, task.sessionCwd ?? null),
       }),
     );
   } else if (task.id === "integration_n8n") {

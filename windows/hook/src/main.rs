@@ -46,6 +46,10 @@ const MAX_DIFF_TOTAL: usize = 512 * 1024;
 /// Longest line sent: the app reads at most 1 MiB from the pipe. An edit whose
 /// JSON escaping would still pass this goes with the ordinary caps instead.
 const MAX_LINE: usize = 1_000_000;
+/// Most hook JSON read from stdin. A finished Edit or Write carries the whole
+/// file it changed (`tool_response`), so a few-megabyte file must still get its
+/// PostToolUse through; anything larger is dropped unread.
+const MAX_STDIN: usize = 16 << 20;
 
 mod win;
 mod protocol;
@@ -224,7 +228,8 @@ struct Event {
 /// Reads stdin and prepares the event to forward.
 fn read_event(provider: &str, arg_event: &str) -> Option<Event> {
     let mut raw = Vec::new();
-    if std::io::stdin().take((1 << 20) + 1).read_to_end(&mut raw).is_err() || raw.is_empty() || raw.len() > (1 << 20) {
+    let limit = MAX_STDIN as u64 + 1;
+    if std::io::stdin().take(limit).read_to_end(&mut raw).is_err() || raw.is_empty() || raw.len() > MAX_STDIN {
         return None;
     }
     let cwd = std::env::current_dir().ok().map(|p| p.to_string_lossy().to_string());
@@ -560,6 +565,19 @@ mod tests {
         let multi = format!(r#"{{"tool_name":"MultiEdit","tool_input":{{"edits":[{{"old_string":"{big}","new_string":"x"}}]}}}}"#);
         let (v, _) = run(&multi, "claude", "PostToolUse");
         assert_eq!(v["tool_input"]["edits"][0]["old_string"].as_str().unwrap().len(), 20_000);
+    }
+
+    #[test]
+    fn the_whole_file_a_finished_edit_reports_is_left_behind() {
+        let original = "x".repeat(3 << 20);
+        let raw = json!({ "tool_name": "Edit",
+            "tool_input": { "file_path": "big.ts", "old_string": "a", "new_string": "b" },
+            "tool_response": { "originalFile": original, "structuredPatch": [] } });
+        let (v, ev) = run(&raw.to_string(), "claude", "PostToolUse");
+        assert!(ev.line.len() < 4_096, "only what the island needs crosses the pipe");
+        assert!(v.get("tool_response").is_none());
+        assert_eq!(v["tool_input"]["old_string"], "a");
+        assert!((3 << 20) < MAX_STDIN);
     }
 
     #[test]

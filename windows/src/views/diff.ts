@@ -6,6 +6,7 @@ import { h, svg } from "./dom";
 import { ICONS } from "./icons";
 import { fileName, type DiffKind, type FileDiff } from "../core/diff";
 import { t } from "../core/i18n";
+import "../core/locales/r2-messages";
 
 const SYMBOLS: Record<DiffKind, string> = { added: "+", removed: "−", context: " " };
 

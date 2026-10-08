@@ -1,6 +1,5 @@
 // English strings for the island's waiting cards (questions, folding), the
-// live diff and the coding agents' wording. Registered through
-// registerMessages by views/views.ts.
+// live diff and the coding agents' wording. Registered by r2-messages.ts.
 
 export const r2En: Record<string, string> = {
   // Live diff: the ticker's diff rows and the diff card.

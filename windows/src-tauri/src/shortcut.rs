@@ -1,17 +1,18 @@
-// The global shortcut that opens the island chat from anywhere (Settings →
-// General). One accelerator, stored in settings.json as e.g. "Ctrl+Alt+Space";
-// "" switches it off. Another app may already own the combination: that is
-// logged and shown in Settings, never fatal.
-
-use std::sync::Mutex;
+// The chat shortcut, the global shortcut that opens the island chat from
+// anywhere. One accelerator, stored in settings.json as e.g. "Ctrl+Alt+KeyR";
+// "" switches it off. It is the first of the global shortcuts shortcuts.rs
+// registers (Settings → Shortcuts); this file keeps how an accelerator is
+// parsed and spelled, the plugin's handler and the entry points lib.rs calls.
+// Another app may already own a combination: that is logged and shown in
+// Settings, never fatal.
 
 use serde::Serialize;
-use tauri::{AppHandle, Emitter};
-use tauri_plugin_global_shortcut::{GlobalShortcutExt, Modifiers, Shortcut, ShortcutEvent, ShortcutState};
+use tauri::{AppHandle, Manager};
+use tauri_plugin_global_shortcut::{GlobalShortcut, Modifiers, Shortcut, ShortcutEvent, ShortcutState};
 
 use crate::errors;
-use crate::island::WINDOW_LABEL;
 use crate::log;
+use crate::shortcuts::Status;
 
 /// Not Ctrl+Alt+Space: the Claude desktop app already holds that one, and the
 /// people who run this next to Claude Code usually have it installed.
@@ -38,17 +39,10 @@ pub struct ShortcutCheck {
     /// The canonical spelling to store (e.g. "Ctrl+Alt+Space"), when it parses.
     pub accelerator: String,
     pub error: Option<String>,
+    /// What the combination types on an installed keyboard layout, when
+    /// Ctrl+Alt is AltGr there (shortcuts::typed_character).
+    pub typed: Option<String>,
 }
-
-struct Current {
-    status: ShortcutStatus,
-    shortcut: Option<Shortcut>,
-}
-
-static CURRENT: Mutex<Current> = Mutex::new(Current {
-    status: ShortcutStatus { accelerator: String::new(), registered: false, error: None },
-    shortcut: None,
-});
 
 /// Parses an accelerator and checks it is one we accept. The error is an
 /// `errors` code.
@@ -91,96 +85,76 @@ pub fn sanitize(accelerator: &str) -> String {
     }
 }
 
-/// The plugin's handler: every press of our shortcut asks the island for the chat.
-pub fn on_event(app: &AppHandle, _shortcut: &Shortcut, event: ShortcutEvent) {
+/// The plugin's handler: a press goes to the action holding the combination
+/// (the chat's still asks the island for the chat, as it always did).
+pub fn on_event(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
     if event.state() == ShortcutState::Pressed {
-        let _ = app.emit_to(WINDOW_LABEL, "tray", "chat".to_string());
+        crate::shortcuts::on_press(app, shortcut);
     }
 }
 
-/// Registers `accelerator` in place of whatever was registered before. A no-op
-/// when it did not change, so `save_settings` calls it on every save (the volume
-/// slider saves on every step: a taken combination is not retried each time).
+/// Registers the chat shortcut `accelerator` and the other global shortcuts in
+/// place of the current ones. A no-op when nothing changed, so `save_settings`
+/// calls it on every save. The other actions' bindings come from the shared
+/// settings, which `save_settings` (and the app's setup) has set by then.
 pub fn apply(app: &AppHandle, accelerator: &str) {
-    let wanted = sanitize(accelerator);
-    let mut current = CURRENT.lock().unwrap();
-    if current.status.accelerator == wanted && (current.status.registered || current.status.error.is_some() || wanted.is_empty()) {
-        return;
-    }
-    if let Some(old) = current.shortcut.take() {
-        if let Err(err) = app.global_shortcut().unregister(old) {
-            log::line(format!("shortcut: could not unregister {}: {err}", canonical(&old)));
-        }
-    }
-    current.status = ShortcutStatus { accelerator: wanted.clone(), registered: false, error: None };
-    if wanted.is_empty() {
-        log::line("shortcut: off");
-        return;
-    }
-    let shortcut = match parse(&wanted) {
-        Ok(s) => s,
-        Err(code) => {
-            current.status.error = Some(code);
-            return;
-        }
-    };
-    match app.global_shortcut().register(shortcut) {
-        Ok(()) => {
-            log::line(format!("shortcut: registered {wanted}"));
-            current.status.registered = true;
-            current.shortcut = Some(shortcut);
-        }
-        Err(err) => {
-            // Most often another app already owns the combination.
-            log::line(format!("shortcut: could not register {wanted}: {err}"));
-            current.status.error = Some(errors::coded(errors::SHORTCUT_TAKEN, &[&err.to_string()]));
-        }
-    }
+    let stored = app
+        .try_state::<crate::Shared>()
+        .map(|shared| shared.settings.lock().unwrap_or_else(|e| e.into_inner()).shortcuts.clone())
+        .unwrap_or_default();
+    crate::shortcuts::apply(app, accelerator, &stored);
 }
 
-/// On exit: hand the combination back to the system.
+/// On exit: hand every combination back to the system.
 pub fn release(app: &AppHandle) {
-    let mut current = CURRENT.lock().unwrap();
-    if let Some(old) = current.shortcut.take() {
-        let _ = app.global_shortcut().unregister(old);
-    }
-    current.status.registered = false;
+    crate::shortcuts::release(app);
 }
 
+/// The chat shortcut's state, as Settings → General used to show it.
 #[tauri::command]
 pub fn shortcut_status() -> ShortcutStatus {
-    CURRENT.lock().unwrap().status.clone()
+    let Some(chat) = crate::shortcuts::status().actions.into_iter().find(|s| s.id == crate::shortcuts::CHAT) else {
+        return ShortcutStatus::default();
+    };
+    let registered = chat.status == Status::Active;
+    ShortcutStatus { accelerator: chat.keys, registered, error: if registered { None } else { chat.error } }
 }
 
-/// For the recorder in Settings: is this combination usable right now? A free
-/// combination is tried for real (registered and released at once), since only
-/// the OS knows whether another app holds it.
+/// For the recorder in Settings: is this combination usable right now? One
+/// that types a character with AltGr is refused; a free one is tried for real
+/// (registered and released at once), since only the OS knows whether another
+/// app holds it. One Roadeep already holds is fine: Settings itself spots two
+/// actions on the same keys.
 #[tauri::command]
 pub fn shortcut_check(app: AppHandle, accelerator: String) -> ShortcutCheck {
     let shortcut = match parse(&accelerator) {
         Ok(s) => s,
-        Err(code) => return ShortcutCheck { ok: false, accelerator: String::new(), error: Some(code) },
+        Err(code) => return ShortcutCheck { ok: false, accelerator: String::new(), error: Some(code), typed: None },
     };
     let name = canonical(&shortcut);
-    {
-        let current = CURRENT.lock().unwrap();
-        if current.status.registered && current.status.accelerator == name {
-            return ShortcutCheck { ok: true, accelerator: name, error: None };
-        }
+    let verdict = |ok: bool, error: Option<String>, typed: Option<String>| ShortcutCheck {
+        ok,
+        accelerator: name.clone(),
+        error,
+        typed,
+    };
+    if crate::shortcuts::holder(&shortcut).is_some() {
+        return verdict(true, None, None);
     }
-    let gs = app.global_shortcut();
+    if let Some(typed) = crate::shortcuts::typed_character(&shortcut) {
+        return verdict(false, None, Some(typed));
+    }
+    let Some(gs) = app.try_state::<GlobalShortcut<tauri::Wry>>() else {
+        return verdict(false, Some(errors::coded(errors::SHORTCUT_TAKEN, &["unavailable"])), None);
+    };
     match gs.register(shortcut) {
         Ok(()) => {
             if let Err(err) = gs.unregister(shortcut) {
                 log::line(format!("shortcut: could not release the trial of {name}: {err}"));
             }
-            ShortcutCheck { ok: true, accelerator: name, error: None }
+            verdict(true, None, None)
         }
-        Err(err) => ShortcutCheck {
-            ok: false,
-            accelerator: name,
-            error: Some(errors::coded(errors::SHORTCUT_TAKEN, &[&err.to_string()])),
-        },
+        Err(err) => verdict(false, Some(errors::coded(errors::SHORTCUT_TAKEN, &[&err.to_string()])), None),
     }
 }
 

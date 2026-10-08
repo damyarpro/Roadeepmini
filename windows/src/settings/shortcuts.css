@@ -1,0 +1,27 @@
+/* Settings → Shortcuts (settings/shortcuts-section.ts). The recorder button
+   and its keycaps are the shared ones in settings.css. */
+
+/* An action that is off shows the keys it would take, quieter. */
+.set-row.off .keycaps kbd {
+  background: transparent;
+  color: var(--text-3);
+}
+
+.sc-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-3);
+}
+
+.sc-island-keys {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.sc-join {
+  color: var(--text-3);
+  font-size: var(--fs-small);
+}

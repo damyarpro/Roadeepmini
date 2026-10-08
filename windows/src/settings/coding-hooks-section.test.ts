@@ -8,7 +8,7 @@ beforeEach(()=>{vi.clearAllMocks();document.body.replaceChildren();setLanguage("
 describe("coding hook setup",()=>{
  it("shows separate providers, native scope and permission limits behind help",()=>{
   const section=codingHooksSection(hookPreviewFixtures());document.body.append(section);
-  expect(section.querySelectorAll(".coding-hook-provider")).toHaveLength(11);
+  expect(section.querySelectorAll(".coding-hook-provider")).toHaveLength(12);
   expect(section.textContent).toContain("Codex");expect(section.textContent).toContain("Cursor");
   expect(section.querySelector('#hook-project-vscode')).not.toBeNull();
   expect(section.textContent).not.toContain("API key");

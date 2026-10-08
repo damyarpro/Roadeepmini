@@ -18,6 +18,7 @@ import { cubicBezier, clamp, lerp } from "../core/anim";
 import { parseDiffStep, type DiffStep } from "../core/diff";
 import type { AgentTask } from "../core/state";
 import { isRtl, t } from "../core/i18n";
+import "../core/locales/r2-messages";
 
 const ROW_H = 22;
 /** One step transition, milliseconds. */

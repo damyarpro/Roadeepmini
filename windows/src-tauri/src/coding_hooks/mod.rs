@@ -141,6 +141,7 @@ fn path_in(base: &Path, provider: &str, project: Option<&str>) -> Result<PathBuf
             root.join("hooks.json")
         }
         "gemini" => base.join(".gemini/settings.json"),
+        "antigravity" => base.join(".gemini/config/hooks.json"),
         "cursor" => base.join(".cursor/hooks.json"),
         "windsurf" => base.join(".codeium/windsurf/hooks.json"),
         "copilot" => {
@@ -273,6 +274,13 @@ fn command(exe: &Path, provider: &str, event: &str) -> Result<String, String> {
     }) {
         return Err(fail("hook-relay-path-unsafe"));
     }
+    // Antigravity runs hooks through cmd: a plain path goes bare, so it also works
+    // should it use PowerShell; anything else is quoted, which cmd keeps.
+    if provider == "antigravity"
+        && path.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '/' | ':' | '.' | '_' | '-'))
+    {
+        return Ok(format!("{path} --provider {provider} {event}"));
+    }
     let prefix = if matches!(provider, "windsurf" | "vscode" | "kiro") {
         "& "
     } else {
@@ -341,7 +349,112 @@ fn previous_plugin(bytes: &[u8]) -> bool {
 fn references_previous(root: &Value, provider: &str) -> bool {
     previous_exes().iter().any(|p| references(root, provider, p))
 }
+
+// Antigravity — ~/.gemini/config/hooks.json. Hooks are named groups at the top
+// level; Roadeep's is ANTIGRAVITY_GROUP. Tool events take matcher groups,
+// lifecycle events take handlers directly; timeouts are in seconds. Its
+// permissions stay Antigravity's: the relay answers PreToolUse "ask", never
+// "allow" (hook/src/main.rs).
+const ANTIGRAVITY_GROUP: &str = "roadeep";
+fn antigravity_tool_event(event: &str) -> bool {
+    matches!(event, "PreToolUse" | "PostToolUse")
+}
+/// Every handler for `event` in Antigravity's group, matcher groups opened.
+fn antigravity_handlers<'a>(group: &'a Value, event: &str) -> Vec<&'a Value> {
+    group
+        .get(event)
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .flat_map(|entry| match entry.get("hooks").and_then(Value::as_array) {
+            Some(handlers) => handlers.iter().collect::<Vec<_>>(),
+            None => vec![entry],
+        })
+        .collect()
+}
+fn antigravity_runs(root: &Value, exe: &Path, every: bool) -> bool {
+    let Some(group) = root.get(ANTIGRAVITY_GROUP) else { return false };
+    let mut events = protocol::events("antigravity").iter();
+    let has = |event: &&str| {
+        antigravity_handlers(group, event)
+            .iter()
+            .any(|h| ours(h, exe, "antigravity", event))
+    };
+    if every { events.all(has) } else { events.any(has) }
+}
+/// Roadeep's group: our handlers replaced (or removed), anybody else's left in
+/// place. A group under our name that holds nothing of ours is somebody else's:
+/// it is neither filled nor removed.
+fn merge_antigravity(mut root: Value, exe: &Path, remove: bool) -> Result<Value, String> {
+    let provider = "antigravity";
+    let mut group = match root.get(ANTIGRAVITY_GROUP) {
+        None => serde_json::Map::new(),
+        Some(Value::Object(group)) => group.clone(),
+        Some(_) => return Err(fail("hook-config-invalid")),
+    };
+    let current = Value::Object(group.clone());
+    let any_ours = protocol::events(provider).iter().any(|event| {
+        antigravity_handlers(&current, event)
+            .iter()
+            .any(|h| ours_any(h, exe, provider, event))
+    });
+    if !group.is_empty() && !any_ours {
+        if remove {
+            return Ok(root);
+        }
+        return Err(fail("hook-group-conflict"));
+    }
+    for event in protocol::events(provider) {
+        let entries = match group.get(*event) {
+            Some(v) => v
+                .as_array()
+                .cloned()
+                .ok_or_else(|| fail("hook-config-invalid"))?,
+            None => Vec::new(),
+        };
+        let mut kept = Vec::new();
+        for mut entry in entries {
+            if entry.get("hooks").is_some() {
+                let list = entry
+                    .get_mut("hooks")
+                    .and_then(Value::as_array_mut)
+                    .ok_or_else(|| fail("hook-config-invalid"))?;
+                let before = list.len();
+                list.retain(|h| !ours_any(h, exe, provider, event));
+                if before > 0 && list.is_empty() {
+                    continue;
+                }
+                kept.push(entry);
+            } else if !ours_any(&entry, exe, provider, event) {
+                kept.push(entry);
+            }
+        }
+        if !remove {
+            let ours = handler(exe, provider, event)?;
+            kept.push(if antigravity_tool_event(event) {
+                json!({"matcher":"*","hooks":[ours]})
+            } else {
+                ours
+            });
+        }
+        if kept.is_empty() {
+            group.remove(*event);
+        } else {
+            group.insert((*event).to_string(), Value::Array(kept));
+        }
+    }
+    let map = root.as_object_mut().ok_or_else(|| fail("hook-config-invalid"))?;
+    if group.is_empty() {
+        map.remove(ANTIGRAVITY_GROUP);
+    } else {
+        map.insert(ANTIGRAVITY_GROUP.into(), Value::Object(group));
+    }
+    Ok(root)
+}
 fn merge(mut root: Value, provider: &str, exe: &Path, remove: bool) -> Result<Value, String> {
+    if provider == "antigravity" {
+        return merge_antigravity(root, exe, remove);
+    }
     if provider == "kiro" {
         if root.get("version").is_some_and(|v| v != "v1") {
             return Err(fail("hook-config-version"));
@@ -430,6 +543,9 @@ fn merge(mut root: Value, provider: &str, exe: &Path, remove: bool) -> Result<Va
     Ok(root)
 }
 fn installed(root: &Value, provider: &str, exe: &Path) -> bool {
+    if provider == "antigravity" {
+        return antigravity_runs(root, exe, true);
+    }
     if provider == "kiro" {
         return protocol::events(provider).iter().all(|event| {
             root["hooks"].as_array().is_some_and(|hooks| {
@@ -457,6 +573,9 @@ fn installed(root: &Value, provider: &str, exe: &Path) -> bool {
 }
 /// Any entry (not necessarily every event) still runs `exe`.
 fn references(root: &Value, provider: &str, exe: &Path) -> bool {
+    if provider == "antigravity" {
+        return antigravity_runs(root, exe, false);
+    }
     protocol::events(provider).iter().any(|event| {
         if provider == "kiro" {
             return root["hooks"].as_array().is_some_and(|hooks| {
@@ -557,6 +676,7 @@ fn status_in(base: &Path, provider: &str, project: Option<&str>) -> ProviderStat
         "vscode" => "VS Code Local",
         "kiro" => "Kiro",
         "opencode" => "OpenCode",
+        "antigravity" => "Antigravity",
         _ => provider,
     };
     ProviderStatus {
@@ -809,6 +929,68 @@ mod tests {
             assert_eq!(removed["other"], original["other"]);
             assert_eq!(removed["hooks"], original["hooks"]);
         }
+    }
+    #[test]
+    fn antigravity_gets_its_own_named_group_and_nothing_else_changes() {
+        let existing = json!({"my-guard":{"PreToolUse":[{"matcher":"run_command","hooks":[{"command":"C:/bin/guard"}]}]}});
+        let installed_root = merge(existing.clone(), "antigravity", &exe(), false).unwrap();
+        assert!(installed(&installed_root, "antigravity", &exe()));
+        assert_eq!(installed_root["my-guard"], existing["my-guard"]);
+        let ours = &installed_root[ANTIGRAVITY_GROUP];
+        for event in ["PreToolUse", "PostToolUse"] {
+            assert_eq!(ours[event][0]["matcher"], "*");
+            assert_eq!(ours[event][0]["hooks"][0]["timeout"], 10);
+            let cmd = ours[event][0]["hooks"][0]["command"].as_str().unwrap();
+            assert_eq!(cmd, format!("C:/Tools/roadeep-hook.exe --provider antigravity {event}"));
+        }
+        for event in ["PreInvocation", "PostInvocation", "Stop"] {
+            assert_eq!(ours[event][0]["type"], "command");
+            assert_eq!(ours[event][0]["timeout"], 10);
+            assert!(ours[event][0]["command"].as_str().unwrap().ends_with(&format!("--provider antigravity {event}")));
+        }
+        assert_eq!(installed_root, merge(installed_root.clone(), "antigravity", &exe(), false).unwrap());
+        assert_eq!(merge(installed_root, "antigravity", &exe(), true).unwrap(), existing);
+    }
+    #[test]
+    fn a_roadeep_group_someone_else_wrote_is_neither_filled_nor_removed() {
+        let theirs = json!({ANTIGRAVITY_GROUP: {"Stop": [{"command": "C:/bin/notify"}]}});
+        assert_eq!(merge(theirs.clone(), "antigravity", &exe(), false).unwrap_err(), "hook-group-conflict");
+        assert_eq!(merge(theirs.clone(), "antigravity", &exe(), true).unwrap(), theirs);
+        assert!(!installed(&theirs, "antigravity", &exe()));
+        // A handler of theirs added to our group stays through update and removal.
+        let mut mixed = merge(json!({}), "antigravity", &exe(), false).unwrap();
+        let notify = json!({"command":"C:/bin/notify"});
+        mixed[ANTIGRAVITY_GROUP]["Stop"].as_array_mut().unwrap().push(notify.clone());
+        let updated = merge(mixed, "antigravity", &exe(), false).unwrap();
+        assert!(installed(&updated, "antigravity", &exe()));
+        assert!(updated[ANTIGRAVITY_GROUP]["Stop"].as_array().unwrap().contains(&notify));
+        assert_eq!(updated, merge(updated.clone(), "antigravity", &exe(), false).unwrap());
+        let removed = merge(updated, "antigravity", &exe(), true).unwrap();
+        assert_eq!(removed, json!({ANTIGRAVITY_GROUP: {"Stop": [notify]}}));
+        // Shapes it does not know are refused, not replaced.
+        let mut odd = merge(json!({}), "antigravity", &exe(), false).unwrap();
+        odd[ANTIGRAVITY_GROUP]["Stop"] = json!({"command": "x"});
+        for odd in [json!({ANTIGRAVITY_GROUP: "nope"}), odd] {
+            assert_eq!(merge(odd.clone(), "antigravity", &exe(), false).unwrap_err(), "hook-config-invalid");
+            assert_eq!(merge(odd, "antigravity", &exe(), true).unwrap_err(), "hook-config-invalid");
+        }
+    }
+    #[test]
+    fn antigravity_runs_a_plain_relay_path_bare_and_quotes_any_other() {
+        assert_eq!(
+            command(Path::new("C:\\Users\\me\\AppData\\Local\\com.roadeep.desktop\\bin\\roadeep-hook.exe"), "antigravity", "Stop").unwrap(),
+            "C:/Users/me/AppData/Local/com.roadeep.desktop/bin/roadeep-hook.exe --provider antigravity Stop"
+        );
+        assert_eq!(
+            command(Path::new("C:\\Users\\Jo Smith\\bin\\roadeep-hook.exe"), "antigravity", "Stop").unwrap(),
+            "\"C:/Users/Jo Smith/bin/roadeep-hook.exe\" --provider antigravity Stop"
+        );
+        assert!(command(Path::new("C:\\Users\\a&b\\roadeep-hook.exe"), "antigravity", "Stop").is_err());
+        // Everyone else keeps the quoted form.
+        assert_eq!(
+            command(Path::new("C:\\Tools\\roadeep-hook.exe"), "gemini", "BeforeTool").unwrap(),
+            "\"C:/Tools/roadeep-hook.exe\" --provider gemini BeforeTool"
+        );
     }
     #[test]
     fn opencode_exact_generated_file_only_and_native_round_trip() {

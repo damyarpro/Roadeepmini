@@ -4,6 +4,7 @@ import type { BotEmoteName, BotStateName, IslandMode, IslandViewName } from "./l
 import type { EyeMotion, EyeShape } from "../character/engine";
 import { DEFAULT_LANGUAGE, type Language } from "./i18n";
 import type { LocalAgent, RoadeepAgent, RoadeepUser } from "./bridge";
+import type { Bindings } from "./bridge-shortcuts";
 import { catalogEntryOf } from "./catalog";
 import { DEFAULT_APPEARANCE, type CharacterAppearance } from "../character/appearance";
 
@@ -27,6 +28,8 @@ export interface AgentTask {
   miniEye?: EyeShape | null;
   pillBadge?: PillBadge | null;
   sessionCwd?: string | null;
+  /** The coding session's id from its hooks: "Open terminal" brings its own window forward. */
+  sessionId?: string | null;
   /** Agent pills only: the settings.chatAgent value its click selects. */
   agentRef?: string | null;
   /** A service run from a catalog manifest (core/catalog.ts). */
@@ -202,6 +205,8 @@ export interface Settings {
   agentColors: Record<string, string>;
   /** Global shortcut that opens the island chat, e.g. "Ctrl+Alt+Space"; "" = off. */
   shortcut: string;
+  /** The other global shortcuts the user changed, by action id (core/bridge-shortcuts.ts). */
+  shortcuts: Bindings;
   /** Look for a new version once a day (builds with the updater only). */
   autoUpdateCheck: boolean;
   /** Where the island is docked. Rust owns it (drag, dockSet); read-only here. */
@@ -287,6 +292,7 @@ export const DEFAULT_SETTINGS: Settings = {
   chatTools: true,
   agentColors: {},
   shortcut: "Ctrl+Alt+KeyR",
+  shortcuts: {},
   autoUpdateCheck: true,
   dock: { ...DEFAULT_DOCK },
   focusMinutes: 25,

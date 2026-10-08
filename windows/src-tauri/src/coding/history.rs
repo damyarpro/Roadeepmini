@@ -38,7 +38,7 @@ fn normalize(events: Vec<Value>, at: u64) -> Result<Vec<Value>, String> {
         let object = v.as_object().ok_or_else(|| fail("history-invalid"))?;
         let id = object.get("id").and_then(Value::as_str).ok_or_else(|| fail("history-invalid"))?;
         let session = v["sessionId"].as_str().ok_or_else(|| fail("history-invalid"))?;
-        if [id, session].iter().any(|s| s.is_empty() || s.encode_utf16().count() > 200 || s.chars().any(char::is_control)) || !matches!(v["harness"].as_str(), Some("codex" | "claude" | "gemini" | "cursor" | "windsurf" | "copilot" | "vscode" | "kiro" | "opencode")) { return Err(fail("history-invalid")); }
+        if [id, session].iter().any(|s| s.is_empty() || s.encode_utf16().count() > 200 || s.chars().any(char::is_control)) || !matches!(v["harness"].as_str(), Some("codex" | "claude" | "gemini" | "cursor" | "windsurf" | "copilot" | "vscode" | "kiro" | "opencode" | "antigravity")) { return Err(fail("history-invalid")); }
         let kind = v["kind"].as_str().filter(|s| matches!(*s, "session" | "prompt" | "tool" | "finished" | "cancelled" | "error" | "usage")).ok_or_else(|| fail("history-invalid"))?;
         let time = v["at"].as_u64().filter(|n| *n <= at + 60_000).ok_or_else(|| fail("history-invalid"))?;
         if time < at.saturating_sub(AGE) { continue; }
@@ -50,7 +50,7 @@ fn normalize(events: Vec<Value>, at: u64) -> Result<Vec<Value>, String> {
             if !matches!(phase.as_str(), Some("started" | "completed" | "failed")) { return Err(fail("history-invalid")); }
             item.insert("phase".into(), phase.clone());
         }
-        item.insert("title".into(), json!(match kind { "session" => match v["harness"].as_str() { Some("claude")=>"Claude session",Some("codex")=>"Codex session",Some("gemini")=>"Gemini session",Some("cursor")=>"Cursor session",Some("windsurf")=>"Windsurf session",Some("copilot")=>"Copilot session",Some("kiro")=>"Kiro session",Some("opencode")=>"OpenCode session",_=>"VS Code session" }, "prompt" => "New task", "tool" => "Observed tool", "finished" => "Task finished", "cancelled" => "Task interrupted", "error" => "Task reported an error", _ => "Observed usage" }));
+        item.insert("title".into(), json!(match kind { "session" => match v["harness"].as_str() { Some("claude")=>"Claude session",Some("codex")=>"Codex session",Some("gemini")=>"Gemini session",Some("cursor")=>"Cursor session",Some("windsurf")=>"Windsurf session",Some("copilot")=>"Copilot session",Some("kiro")=>"Kiro session",Some("opencode")=>"OpenCode session",Some("antigravity")=>"Antigravity session",_=>"VS Code session" }, "prompt" => "New task", "tool" => "Observed tool", "finished" => "Task finished", "cancelled" => "Task interrupted", "error" => "Task reported an error", _ => "Observed usage" }));
         if let Some(code) = v.get("exitCode") { if code.as_i64().and_then(|n| i32::try_from(n).ok()).is_none() { return Err(fail("history-invalid")); } item.insert("exitCode".into(), code.clone()); }
         if let Some(files) = v.get("files") {
             let files = files.as_array().filter(|a| a.len() <= 60).ok_or_else(|| fail("history-invalid"))?;
@@ -203,7 +203,7 @@ mod tests {
     fn event() -> Value { json!({"id":"codex:fixture:1","sessionId":"codex:fixture","harness":"codex","at":super::super::now(),"kind":"tool","title":"private prompt","output":"API_KEY=private-value","command":"secret transcript","patch":"raw patch","context":{"usedTokens":5,"limitTokens":10,"usedPercent":50}}) }
     #[test]
     fn every_documented_hook_provider_round_trips_without_transcript() {
-        for harness in ["claude","codex","gemini","cursor","windsurf","copilot","vscode","kiro","opencode"] {
+        for harness in ["claude","codex","gemini","cursor","windsurf","copilot","vscode","kiro","opencode","antigravity"] {
             let input=json!({"id":format!("{harness}:fixture:event"),"sessionId":"shared-id","harness":harness,"at":super::super::now(),"kind":"session","title":"Private prompt","output":"private"});
             let out=normalize(vec![input],super::super::now()).unwrap();
             assert_eq!(out[0]["harness"],harness);assert!(out[0].get("output").is_none());assert!(!out[0]["title"].as_str().unwrap().contains("Private"));

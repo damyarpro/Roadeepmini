@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.8 — 2026-10-09
+
+Windows
+- Antigravity: install its hooks from Settings. Permission requests are never allowed automatically.
+- Answer Claude Code's questions from the island: single and multi-select, one step per question.
+- The permission card waits for you and can be folded away; it keeps its agent pill in front.
+- Clicks on a fresh permission card are ignored for 600 ms, so a stray click cannot approve.
+- Live diff: finished edits appear as ticker steps (file, added and removed lines), with a diff card and Claude's final line.
+- Customisable shortcuts in Settings → Shortcuts. The chat shortcut (Ctrl+Alt+R) is unchanged; the new ones start off.
+- Open terminal brings the session's own window forward.
+- The ticker no longer stops at a session's twentieth step; the auto-close delay applies at once; stale Stop timers are cancelled; animations pause in hidden views.
+- The hook relay accepts larger edits, so diffs of big files are kept.
+- Security: source-map-js 1.2.2 (GHSA-68fv-2mgg-jv7q). A symlinked settings.json is written through to its target.
+
+Mac
+- The auto-close setting is respected; a web-search reply shows its full answer.
+- settings.json is never rewritten from an unreadable or unexpected file; a dated backup is taken first.
+- Release builds no longer include the debug entitlement.
+- The chat persona is Roadeep and uses no hardcoded user name.
+
 ## 0.1.6 — 2026-10-05
 
 - Verified administrator speech recognizes an explicit Roadeep name prefix, removes it before task/chat handling and acknowledges a standalone recognized name locally. A 20-second one-request window supports a separate follow-up in manual and always-ready modes.
@@ -45,12 +65,6 @@ Roadeep edition of the Windows app.
 - No generation view on the island; generation is available through the MCP server only.
 
 ## Unreleased
-
-- Mac: the auto-close setting is respected again (the island folded after 15 s whatever was chosen)
-- Mac: a reply that starts with a web-search preamble shows the full answer, not only the first text block
-- Mac: settings.json is never rewritten from an unreadable or unexpected file; a dated backup is taken first and the file is written atomically
-- Mac: Release builds no longer include the debug entitlement
-- Mac: the chat persona is Roadeep and no longer uses a hardcoded user name
 
 - Compact island on screens without a notch (#22) — thanks @Kamasoutra
 - Only web links (http/https) open from the notch; other kinds of links from Claude or integrations are ignored (#16) — thanks @Cris1670

@@ -12,7 +12,15 @@ import type { CelebrationKind } from "../character/engine";
 import { buildPrompt } from "./chat";
 import { buildChoose, buildUpload, buildUploading } from "./upload";
 import { renderIntegrationCard, type IntegrationCardHooks } from "./integrations";
+import { buildDiffCard } from "./diff";
+import { lastTextStep } from "../core/diff";
+import type { QuestionAnswer } from "../core/bridge-hooks";
+import { isCodingProvider } from "../activity/providers";
+import { pendingQuestions } from "../island/approvals";
+import { findDiff, finalLine, stepSeq } from "../island/live-session";
 import { formatNumber, t } from "../core/i18n";
+import "../core/locales/r2-messages";
+import "./island-cards.css";
 import { localizeError } from "../core/error-text";
 import { PLANNER_VIEWS, buildPalette, openPalette } from "./palette";
 import { icon as plannerIcon } from "./planner/ui";
@@ -32,12 +40,18 @@ import {withVoiceDraft} from "./planner/voice-draft";
 export interface ViewActions {
   setView(v: IslandViewName): void;
   collapse(): void;
+  /** Folds a waiting card to the compact island without answering it. */
+  foldApproval(): void;
   setFocus(id: string): void;
   openTerminal(): void;
   /** The ↗ button: opens whatever the focused pill points at. */
   openTarget(): void;
   openUrl(url: string): void;
   decide(d: "allow" | "deny"): void;
+  /** Answers the question card: one answer per question, by option position. */
+  answer(answers: QuestionAnswer[]): void;
+  /** Hands the waiting request back to the terminal. */
+  answerInTerminal(): void;
   toggleSound(): void;
   setVolume(v: number): void;
   setAutoClose(seconds: number): void;
@@ -54,8 +68,8 @@ export interface ViewHost {
   sync(): void;
   /** Called when the view becomes active, for views with a text field. */
   focus?(): void;
-  /** Called every frame while the view is on screen. */
-  tick?(nowMs: number): void;
+  /** Called every frame while the view is on screen. True = needs another frame. */
+  tick?(nowMs: number): boolean | void;
 }
 
 // ── Shared pieces ─────────────────────────────────────────────────────────────
@@ -160,7 +174,18 @@ export function buildHeader(actions: ViewActions): ViewHost {
 // ── Overview ──────────────────────────────────────────────────────────────────
 
 export function buildOverview(actions: ViewActions): ViewHost {
-  const ticker = new Ticker();
+  /** The diff open in the left card (a FileDiff id), as activeDiffId on macOS. */
+  let activeDiffId: number | null = null;
+  const closeDiff = () => {
+    if (activeDiffId == null) return;
+    activeDiffId = null;
+    State.notify();
+  };
+  const ticker = new Ticker((diffId) => {
+    actions.blip();
+    activeDiffId = diffId;
+    State.notify();
+  });
   const who = h("div", { class: "who" });
   const tickerBody = h("div", { class: "card-body" }, who, ticker.el);
   const leftBody = h("div", { class: "left-body" });
@@ -181,8 +206,25 @@ export function buildOverview(actions: ViewActions): ViewHost {
   let pillIds = "";
   let detailOpen = false;
   let lastFocus: string | null = null;
-  let mode: "ticker" | "card" | null = null;
+  let mode: "ticker" | "card" | "diff" | null = null;
   let cardKey = "";
+
+  // Leaving the overview or folding the island closes the diff, as on macOS.
+  State.subscribe(() => {
+    if (activeDiffId != null && (State.view !== "overview" || State.mode !== "expanded")) {
+      activeDiffId = null;
+    }
+  });
+  // Escape steps back out of the diff before it folds the island.
+  window.addEventListener(
+    "keydown",
+    (e) => {
+      if (e.key !== "Escape" || activeDiffId == null || State.view !== "overview" || !el.isConnected) return;
+      e.stopImmediatePropagation();
+      closeDiff();
+    },
+    true,
+  );
 
   const hooks: IntegrationCardHooks = {
     get detailOpen() {
@@ -205,22 +247,43 @@ export function buildOverview(actions: ViewActions): ViewHost {
   return {
     el,
     tick(nowMs: number) {
-      if (mode === "ticker") ticker.tick(nowMs);
+      if (mode !== "ticker") return false;
+      ticker.tick(nowMs);
+      return ticker.animating;
     },
     sync() {
       const task = State.focusTask;
       if (task?.id !== lastFocus) {
         lastFocus = task?.id ?? null;
         detailOpen = false;
+        activeDiffId = null;
         cardKey = "";
         mode = null;
       }
 
       // Coding observation has lifecycle evidence, never an integration API key.
-      const sessionActive =
-        task?.id === "integration_codex" || (task?.id === "integration_claude" && (task.state !== "idle" || task.steps.length > 0));
+      const sessionActive = task != null && hasSessionTicker(task);
 
-      if (task && sessionActive) {
+      // A diff that has since been dropped (cap, expiry, session end) just closes.
+      const diff = task && activeDiffId != null ? findDiff(task.id, activeDiffId) : null;
+      if (!diff) activeDiffId = null;
+
+      if (task && diff) {
+        const key = `diff~${task.id}~${diff.id}`;
+        if (key !== cardKey) {
+          cardKey = key;
+          mode = "diff";
+          clear(leftBody);
+          // No ↗ yet: opening the edited file needs a command that only ever
+          // hands an existing file to the editor, never launches it.
+          leftBody.append(buildDiffCard(diff, {
+            dismiss: () => {
+              actions.blip();
+              closeDiff();
+            },
+          }));
+        }
+      } else if (task && sessionActive) {
         if (mode !== "ticker") {
           clear(leftBody);
           leftBody.append(tickerBody);
@@ -228,10 +291,15 @@ export function buildOverview(actions: ViewActions): ViewHost {
           cardKey = "";
         }
         clear(who);
+        // The agent's name is already the pill's: the label says what kind of
+        // pill it is, as on the Mac.
         who.append(
           dot(task.color, 7),
           h("span", { class: "name", dir: "auto", text: task.name }),
-          h("span", { class: "tool", text: task.id === "integration_codex" ? "Codex" : task.source === "claudeCode" ? "Claude Code" : "n8n" }),
+          h("span", {
+            class: "tool",
+            text: task.id === "integration_codex" ? "Codex" : task.source === "claudeCode" ? "Claude Code" : t("card.agent"),
+          }),
         );
         if (task.id !== "integration_codex" && task.steps.length > 1) {
           who.append(h("span", {
@@ -239,7 +307,7 @@ export function buildOverview(actions: ViewActions): ViewHost {
             text: `${formatNumber(Math.min(task.stepIndex + 1, task.steps.length))}/${formatNumber(task.steps.length)}`,
           }));
         }
-        ticker.sync(task);
+        ticker.sync(task, { seq: stepSeq(task.id), still: finalLine(task.id) != null });
       } else if (task) {
         const info = State.integrations[task.id];
         const key = [
@@ -255,7 +323,7 @@ export function buildOverview(actions: ViewActions): ViewHost {
         }
       }
 
-      jump.style.display = detailOpen ? "none" : "";
+      jump.style.display = detailOpen || mode === "diff" ? "none" : "";
       jump.title = t(task?.id === "integration_codex" ? "activity.openCodex" : "overview.open");
       jump.setAttribute("aria-label", jump.title);
 
@@ -269,6 +337,17 @@ export function buildOverview(actions: ViewActions): ViewHost {
       }
     },
   };
+}
+
+/**
+ * A coding pill with something going on keeps the ticker — Claude Code's and
+ * every agent's the relay reports (Gemini CLI, Cursor…). Codex always does:
+ * its activity lives in its log evidence, never in an integration card.
+ */
+export function hasSessionTicker(task: AgentTask): boolean {
+  if (task.id === "integration_codex") return true;
+  const provider = task.id.replace(/^integration_/, "");
+  return isCodingProvider(provider) && (task.state !== "idle" || task.steps.length > 0);
 }
 
 function buildPill(task: AgentTask, actions: ViewActions): HTMLElement {
@@ -333,15 +412,60 @@ function buildEmpty(actions: ViewActions): ViewHost {
 
 // ── Approval ──────────────────────────────────────────────────────────────────
 
-function buildApproval(actions: ViewActions): ViewHost {
-  const who = h("div");
+/** How long a fresh card ignores clicks on its buttons. */
+export const CLICK_GUARD_MS = 600;
+
+/**
+ * The card pops up under a cursor that was busy with something else: a click
+ * meant for the window underneath must not land on Allow, or on an answer.
+ * Clicks in the first moments after a new request appears are ignored.
+ */
+function clickGuard() {
+  let shownFor: string | null = null;
+  let shownAt = 0;
+  return {
+    /** Called on every sync: a new request restarts the guard. */
+    seen() {
+      const req = State.pendingApproval?.requestId ?? null;
+      if (req === shownFor) return;
+      shownFor = req;
+      shownAt = performance.now();
+    },
+    guard: (action: () => void) => () => {
+      if (performance.now() - shownAt < CLICK_GUARD_MS) return;
+      action();
+    },
+  };
+}
+
+/**
+ * The ⌃ in the corner of a waiting card: folds the island to its compact size
+ * and leaves the request waiting — nothing is answered (Mac #290). Opening the
+ * island again brings the card back.
+ */
+function foldButton(actions: ViewActions): HTMLElement {
+  const label = t("card.fold");
+  return h(
+    "button",
+    { type: "button", class: "icon-btn fold", title: label, "aria-label": label, onclick: () => actions.foldApproval() },
+    svg(ICONS.chevronUp, 8, { stroke: 2.4 }),
+  );
+}
+
+export function buildApproval(actions: ViewActions): ViewHost {
+  const who = h("div", { class: "card-who" });
   const code = h("div", { class: "code" });
   const row = h("div", { class: "actions" });
-  const el = h("div", { class: "view" }, card("amber", stack(116, 16, who, code, row)));
+  const fold = foldButton(actions);
+  const el = h("div", { class: "view" }, card("amber", stack(116, 16, who, code, row), fold));
   let rowKey = "";
+  const fresh = clickGuard();
   return {
     el,
     sync() {
+      fresh.seen();
+      // Only a request that is waiting can be folded away and come back.
+      fold.style.display = State.pendingApproval ? "" : "none";
       clear(who);
       const task = State.pendingApproval?.taskId ? State.tasks.find(task => task.id === State.pendingApproval?.taskId) : State.focusTask;
       who.append(agentWho(task ?? null, t("approval.needsPermission")));
@@ -356,8 +480,8 @@ function buildApproval(actions: ViewActions): ViewHost {
       rowKey = "built";
       clear(row);
       row.append(
-        btn(t("approval.deny"), "secondary", () => actions.decide("deny"), "N"),
-        btn(t("approval.allow"), "primary", () => actions.decide("allow"), "Y"),
+        btn(t("approval.deny"), "secondary", fresh.guard(() => actions.decide("deny")), "N"),
+        btn(t("approval.allow"), "primary", fresh.guard(() => actions.decide("allow")), "Y"),
       );
     },
   };
@@ -379,28 +503,118 @@ function buildVoiceApproval(): ViewHost {
 
 // ── Question ──────────────────────────────────────────────────────────────────
 
-function buildQuestion(): ViewHost {
-  const who = h("div");
+export function buildQuestion(actions: ViewActions): ViewHost {
+  const who = h("div", { class: "card-who" });
   // Claude's own words, in whatever language it used.
-  const title = h("div", { class: "title", dir: "auto" });
-  const row = h("div", { class: "actions" });
-  const el = h("div", { class: "view" }, card("cyan", stack(116, 16, who, title, row)));
+  const title = h("div", { class: "title question-text", dir: "auto" });
+  const row = h("div", { class: "actions options" });
+  const fold = foldButton(actions);
+  const el = h("div", { class: "view" }, card("cyan", stack(116, 16, who, title, row), fold));
+  const fresh = clickGuard();
+
+  // Where we are in the request on screen: which question, what is answered so
+  // far (by option position), and what is ticked in a pick-several question.
+  let requestId = "";
+  let index = 0;
+  let answers: QuestionAnswer[] = [];
+  let picked = new Set<number>();
+  // The buttons are only rebuilt when what they show changes: rebuilding them
+  // between a mouse-down and a mouse-up would swallow the click.
+  let rowKey = "";
+
+  const next = (answer: QuestionAnswer, total: number) => {
+    answers[index] = answer;
+    picked = new Set();
+    index += 1;
+    if (index >= total) actions.answer(answers);
+    else State.notify();
+  };
+
   return {
     el,
     sync() {
+      fresh.seen();
+      const questions = pendingQuestions();
+      const task = State.pendingApproval?.taskId
+        ? State.tasks.find((x) => x.id === State.pendingApproval?.taskId) ?? State.focusTask
+        : State.focusTask;
       clear(who);
-      who.append(agentWho(State.focusTask, t("question.asking")));
-      const task = State.focusTask;
-      title.textContent = task?.steps.at(-1) ?? t("question.fallback");
+      // Only a request that is waiting can be folded away and come back.
+      fold.style.display = State.pendingApproval ? "" : "none";
+
+      // A question that arrived as a notification has nothing to pick from.
+      if (!questions) {
+        who.append(agentWho(task, t("ask.askingQuestion")));
+        title.textContent = (task && lastTextStep(task.steps)) ?? t("question.fallback");
+        title.title = "";
+        if (rowKey !== "terminal") {
+          rowKey = "terminal";
+          clear(row);
+          row.append(h("div", { class: "sub", text: t("ask.answerItInTerminal") }));
+        }
+        return;
+      }
+
+      const req = State.pendingApproval!.requestId;
+      if (req !== requestId) {
+        requestId = req;
+        index = 0;
+        answers = [];
+        picked = new Set();
+      }
+      const q = questions[Math.min(index, questions.length - 1)];
+      const asking = questions.length > 1
+        ? t("ask.askingOf", { index: index + 1, total: questions.length })
+        : t("ask.asking");
+      who.append(agentWho(task, asking));
+      title.textContent = q.question;
+      title.title = q.question;
+
+      const key = `${requestId}:${index}:${[...picked].join("|")}`;
+      if (rowKey === key) return;
+      rowKey = key;
       clear(row);
-      row.append(h("div", { class: "sub", text: t("question.answerInTerminal") }));
+      q.options.forEach((option, i) => {
+        const on = picked.has(i);
+        const button = btn(option.label, on ? "primary" : "secondary", fresh.guard(() => {
+          if (!q.multiSelect) {
+            next(i, questions.length);
+            return;
+          }
+          if (picked.has(i)) picked.delete(i);
+          else picked.add(i);
+          State.notify();
+        }));
+        button.setAttribute("dir", "auto");
+        if (q.multiSelect) button.setAttribute("aria-pressed", String(on));
+        if (option.description) button.title = option.description;
+        row.append(button);
+      });
+      if (q.multiSelect) {
+        const done = btn(t("ask.done"), "primary", fresh.guard(() => {
+          if (picked.size > 0) next([...picked].sort((a, b) => a - b), questions.length);
+        }));
+        if (picked.size === 0) {
+          done.classList.add("off");
+          done.setAttribute("aria-disabled", "true");
+        }
+        row.append(done);
+      }
+      row.append(
+        h("button", {
+          type: "button",
+          class: "link-btn",
+          text: t("ask.inTerminal"),
+          onclick: () => actions.answerInTerminal(),
+        }),
+      );
     },
   };
 }
 
 // ── Error ─────────────────────────────────────────────────────────────────────
 
-function buildError(actions: ViewActions): ViewHost {
+export function buildError(actions: ViewActions): ViewHost {
   const who = h("div");
   const title = h("div", { class: "title", text: t("error.workflowStopped") });
   const detail = h("div", { class: "detail", dir: "auto" });
@@ -414,19 +628,26 @@ function buildError(actions: ViewActions): ViewHost {
     sync() {
       const task = State.focusTask;
       clear(who);
-      who.append(agentWho(task, task?.source === "n8n" ? "n8n" : "Claude Code"));
+      // agentWho already shows an agent's name: its label is just the kind.
+      who.append(agentWho(task, task?.source === "n8n" ? "n8n" : isCodingAgent(task) ? t("card.agent") : "Claude Code"));
       title.textContent = task?.source === "n8n" ? t("error.workflowStopped") : t("error.sessionStopped");
-      detail.textContent = localizeError(task?.steps.at(-1) ?? t("error.noDetail"));
+      detail.textContent = localizeError((task && lastTextStep(task.steps)) ?? t("error.noDetail"));
       detail.title = detail.textContent;
     },
   };
 }
 
+/** A coding agent's pill other than Claude Code's (Codex, Gemini CLI, Cursor…). */
+function isCodingAgent(task: AgentTask | null): boolean {
+  if (!task || task.id === "integration_claude") return false;
+  return isCodingProvider(task.id.replace(/^integration_/, ""));
+}
+
 // ── Finished ──────────────────────────────────────────────────────────────────
 
-function buildFinished(actions: ViewActions): ViewHost {
+export function buildFinished(actions: ViewActions): ViewHost {
   const who = h("div");
-  const title = h("div", { class: "title", dir: "auto" });
+  const title = h("div", { class: "title one-line", dir: "auto" });
   const row = h("div", { class: "actions" },
     btn(t("finished.openTerminal"), "primary", () => actions.openTerminal()),
     btn(t("common.ok"), "secondary", () => actions.collapse()),
@@ -435,9 +656,15 @@ function buildFinished(actions: ViewActions): ViewHost {
   return {
     el,
     sync() {
+      const task = State.focusTask;
       clear(who);
-      who.append(agentWho(State.focusTask, t("finished.label")));
-      title.textContent = localizeError(State.focusTask?.steps.at(-1) ?? t("finished.fallback"));
+      // An agent's name is already in the row: "finished" is enough.
+      who.append(agentWho(task, isCodingAgent(task) ? t("card.agentFinished") : t("finished.label")));
+      // The turn's final message as written, else the last step that is not a
+      // diff (FinishedView).
+      const final = task ? finalLine(task.id) : null;
+      title.textContent = final ?? localizeError((task && lastTextStep(task.steps)) ?? t("finished.fallback"));
+      title.title = title.textContent;
     },
   };
 }
@@ -633,7 +860,7 @@ export function buildViews(
   map.set("overview", buildOverview(actions));
   map.set("empty", buildEmpty(actions));
   map.set("approval", buildApproval(actions));
-  map.set("question", buildQuestion());
+  map.set("question", buildQuestion(actions));
   map.set("error", buildError(actions));
   map.set("finished", buildFinished(actions));
   map.set("confused", buildConfused());

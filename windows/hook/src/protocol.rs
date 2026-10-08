@@ -282,6 +282,8 @@ pub fn normalize(input: &Value, provider: &str, event: &str) -> Option<Value> {
         ("notification_type", &["notification_type"]),
         ("prompt", &["prompt", "initialPrompt"]),
         ("message", &["message"]),
+        // Claude Code's Stop: the turn's final line, shown on the island.
+        ("last_assistant_message", &["last_assistant_message"]),
         ("reason", &["reason"]),
         ("term_program", &["term_program"]),
         ("wt_session", &["wt_session"]),
@@ -409,6 +411,9 @@ mod tests {
         assert_eq!(v["tool_input"]["command"], "echo ok");
         assert!(v.get("output").is_none());
         assert!(v["tool_input"].get("content").is_none());
+        let stop = normalize(&json!({"session_id":"s","last_assistant_message":"Done.","transcript_path":"private"}),"claude","Stop").unwrap();
+        assert_eq!(stop["last_assistant_message"], "Done.");
+        assert!(stop.get("transcript_path").is_none());
     }
 
     #[test]

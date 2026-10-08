@@ -12,13 +12,14 @@ export const SETTINGS_CATEGORIES = [
   { id: "mcp", icon: "mcp", label: "nav.mcpClaude", fa: "اتصال ابزارهای کدنویسی و MCP", en: "Connect coding apps and MCP tools" },
   { id: "mcpServers", icon: "servers", label: "mcpc.title", fa: "مدیریت سرورهای ابزار", en: "Manage tool servers" },
   { id: "general", icon: "general", label: "general.title", fa: "ظاهر، زبان و رفتار اپ", en: "Appearance, language and app behavior" },
+  { id: "shortcuts", icon: "keyboard", label: "shortcuts.title", fa: "کلیدهای میان‌بر و کارهایشان", en: "Keyboard shortcuts and what they do" },
 ] as const satisfies readonly { id: string; icon: IconName; label: string; fa: string; en: string }[];
 export type SettingsCategory = typeof SETTINGS_CATEGORIES[number]["id"];
 export type SettingsDestination = SettingsCategory | "dashboard";
 export const SETTINGS_GROUPS = [
   {id:"personal",fa:"حساب و دستیارها",en:"Account and assistants",categories:["account","assistant","agents"]},
   {id:"connections",fa:"اتصال‌ها و ابزارها",en:"Connections and tools",categories:["integrations","mcp","mcpServers"]},
-  {id:"preferences",fa:"برنامه و تنظیمات اپ",en:"Plans and app preferences",categories:["planner","general"]},
+  {id:"preferences",fa:"برنامه و تنظیمات اپ",en:"Plans and app preferences",categories:["planner","general","shortcuts"]},
 ] as const satisfies readonly {id:string;fa:string;en:string;categories:readonly SettingsCategory[]}[];
 export const categoryAnchor = (id: SettingsCategory) => `sec-${id}`;
 const copy = (fa: string, en: string) => getLanguage() === "fa" ? fa : en;

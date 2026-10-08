@@ -1,166 +1,116 @@
-## Roadeep edition (Windows)
-
-The `windows/` app in this fork is **Roadeep**, a Windows desktop companion for the [Roadeep](https://roadeep.com) AI platform: an island at the top of the screen with chat, agents, Claude Code approvals, integrations and a local MCP server. See [windows/README.md](windows/README.md) for features, build steps and releasing.
-
-**Licence and assets.** Based on an open-source project by Louis Raillé (MIT licence); the code is MIT, copyright (c) 2026 Louis Raillé. Per [LICENSE-ASSETS.md](LICENSE-ASSETS.md), the upstream character design, icons and sounds are reserved by their author and may not be published or distributed in a fork without written permission. This build still uses them, so it is for local, personal use until permission is obtained or they are replaced with Roadeep's own character, icon and sounds.
-
----
-
 <div align="center">
 
-<img src="NotchBuddy/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" width="96" alt="Roadeep icon">
+# رودیپ
 
-# Roadeep
+**همراه دسکتاپ برای ویندوز و مک**: گفتگو، دستیار صوتی، برنامه‌ریز و تأیید درخواست‌های Claude Code، همیشه یک نگاه با شما فاصله دارد.
 
-**A tiny friend that lives in your Mac's notch — or at the top of your screen on Windows — and keeps an eye on your Claude Code sessions.**
-
-Approve permissions, watch your agents work, drop a file, chat with Claude — all without leaving what you're doing.
-
-![macOS 15+](https://img.shields.io/badge/macOS-15%2B-black?logo=apple)
-![Windows 10/11](https://img.shields.io/badge/Windows-10%2F11-0078D4?logo=windows&logoColor=white)
-![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)
-![SwiftUI](https://img.shields.io/badge/SwiftUI-native-0A84FF)
-![Tauri 2](https://img.shields.io/badge/Tauri-2-FFC131?logo=tauri&logoColor=black)
-![License: MIT](https://img.shields.io/badge/license-MIT-green)
-
-<img src="docs/media/demo.gif" width="760" alt="Roadeep in action">
+![جزیرهٔ رودیپ با گفتگو و کارت Claude Code](docs/media/roadeep-island-chat.png)
 
 </div>
 
 ---
 
-## Why
+## درباره
 
-Some studios showed off gorgeous notch companions… and never let anyone use them.
-**Roadeep is the open version.** Every line of code, every animation, every sound — free to use, read, fork and remix.
+رودیپ یک جزیرهٔ کوچک بالای صفحه است (در مک، داخل نات). از همان‌جا می‌توانید با رودیپ گفتگو کنید، با دستیار صوتی حرف بزنید، کارها و یادداشت‌هایتان را مدیریت کنید، درخواست‌های دسترسی Claude Code را تأیید کنید و ایجنت‌هایتان را دنبال کنید، بدون اینکه از کاری که دارید انجامش می‌دهید جدا شوید.
 
-Meet **Mochi**: a soft little squircle with big eyes that pops out of your notch, waves hello, follows your cursor with its eyes, gets annoyed when you poke it (and dizzy if you insist), and tells you the moment Claude Code needs you.
+## امکانات
 
-## Features
+### ویندوز
 
-- 🤖 **Claude Code, live** — see every session in your notch: what it reads, edits and runs, step by step. Finished? Mochi does a happy little jump.
-- ✅ **Approve from the notch** — Claude Code permission requests show up with **Allow / Deny**. One click, back to work.
-- 🧑‍💻 **Jump to the right terminal** — open the exact terminal window of a session *(macOS)*.
-- 💬 **Ask Claude anything** — built-in chat, straight from the notch.
-- 📎 **Drop a file on the notch** — Mochi turns into a box and swallows it, then ask a question about it or send it by email *(email: macOS, Mail.app)*.
-- 🪟 **Drag Mochi onto any window** — attach that window as context for Claude *(macOS)*.
-- 🔌 **Integrations** — Stripe payments, n8n workflows, GitHub, Vercel deployments, Resend emails, Notion, Cal.com. Each one gets its own little colored Mochi.
-- 🎭 **A real character** — idle breathing, blinks, eyes on a sphere that follow your mouse, emotes, 28 handcrafted sounds, a greeting on launch.
-- 🫥 **Invisible when idle** — hides away when nothing is running, peeks out when you hover the notch (the top edge of the screen on Windows).
-- 🖥️ **Any Mac, notch or not** — on an iMac, a Mac mini, or a MacBook with its lid closed on an external display, Mochi sits in a small bar at the top of the screen.
-- 🔒 **Private by design** — no telemetry, no account. Keys live in your macOS Keychain or Windows Credential Manager. The app only talks to the services you plug in.
+- **جزیره** در لبهٔ بالای صفحه؛ با کشیدن به هر لبهٔ بالا، چپ یا راست جابه‌جا می‌شود. رابط فارسی (راست‌به‌چپ) و انگلیسی.
+- **گفتگو با رودیپ**: پاسخ‌های زنده، قالب‌بندی Markdown، تاریخچهٔ گفتگوها، تأیید درخواست‌های ابزار، و پرسیدن دربارهٔ یک فایل با رها کردن آن روی جزیره.
+- **دستیار صوتی**: گفتگوی صوتی زنده با GPT-Live از OpenAI، با کلید خودتان. دستیار می‌تواند داخل خود برنامه کار کند (کار، یادداشت، یادآور، تایمر تمرکز، تنظیمات) و هر تغییری منتظر تأیید شماست، با کلیک یا با گفتن «بله» و «نه».
+- **برنامه‌ریز**: کار، یادداشت، یادآور، عادت، تایمر تمرکز (پومودورو) و نمای امروز و هفته. با تایپ `/` منوی فرمان باز می‌شود.
+- **حافظهٔ محلی**: دستیار ترجیح‌ها و عادت‌های شما را روی همین رایانه به خاطر می‌سپارد. می‌توانید ببینید، پاک کنید یا کلاً خاموشش کنید.
+- **Claude Code**: نشست‌ها را زنده ببینید، درخواست‌های دسترسی را از روی جزیره تأیید یا رد کنید، و به پرسش‌هایش همان‌جا جواب دهید. هوک‌ها فقط بعد از بررسی تغییرات نصب می‌شوند.
+- **ایجنت‌ها**: ایجنت‌های رودیپ و ایجنت‌های خودتان که با یک ویزارد کمک‌دار ساخته می‌شوند.
+- **یکپارچه‌سازی‌ها**: Stripe، GitHub، Vercel، n8n، Resend، Notion و Cal.com.
+- **سرور MCP**: `roadeep-mcp` به Claude Code امکان می‌دهد از گفتگو، مدل‌ها و ایجنت‌های رودیپ استفاده کند. تولیدهای پولی بدون تأیید شما انجام نمی‌شوند.
+- **کاراکتر متحرک**: کاراکتری که با کد کشیده شده و ۱۴ حالت، حالت‌های چهره، شکل‌ها و رنگ‌ها دارد. حرکتش بر پایهٔ bloub نوشتهٔ Jérémy Perret (MIT) است.
+- **میان‌برها**: `Ctrl+Alt+R` گفتگوی جزیره را از هر جایی باز می‌کند. بقیهٔ میان‌برها در تنظیمات ← میان‌برها قابل تنظیم‌اند و به‌صورت پیش‌فرض خاموش‌اند.
 
-<table>
-<tr>
-<td><img src="docs/media/claude-code.png" alt="Claude Code session"></td>
-<td><img src="docs/media/stripe.png" alt="Stripe payments"></td>
-</tr>
-<tr>
-<td><img src="docs/media/chat.png" alt="Chat with Claude"></td>
-<td><img src="docs/media/dizzy.png" alt="Too many hits"></td>
-</tr>
-</table>
+### مک
 
-## Install
+- جزیره در نات، نمایش نشست‌های Claude Code و تأیید درخواست‌ها، گفتگو، رها کردن فایل روی جزیره و یکپارچه‌سازی‌ها.
+- برنامه‌ریز، دستیار صوتی و حافظه هنوز روی مک نیستند.
 
-### macOS
+## تصاویر و نمایش
 
-1. Build `Roadeep.app` from source (see below) — no public macOS download is published.
-2. Move **Roadeep.app** to `/Applications`.
-3. Launch. This build isn't notarized by Apple yet, so the first time macOS says it can't verify the developer: open **System Settings → Privacy & Security**, scroll down and click **Open Anyway** (only once).
+![منوی فرمان و برنامه‌ریز](docs/media/roadeep-island-menu.png)
 
-### Windows
+![کاراکتر جزیره با حالت‌های مختلف](docs/media/roadeep-character.png)
 
-The Windows installer is **temporarily unavailable**. Microsoft Defender wrongly
-flags the unsigned installer as malware; a false-positive report is under review
-at Microsoft and the installer will come back once it is cleared and signed.
-Until then you can [build it from source](#build-from-source).
+![نمایش کوتاه جزیره](docs/media/demo.gif)
 
-There is no notch on a PC, so the island slides out of the top edge of the screen
-instead of hiding inside one. See [`windows/README.md`](windows/README.md) for the
-rest of the differences.
+## نصب
 
-### Build from source
+- **ویندوز:** نصب‌کنندهٔ آخرین انتشار را از صفحهٔ [انتشارها](../../releases) دانلود کنید، بعد از اینکه منتشر شد. تا آن موقع می‌توانید خودتان از سورس بسازیدش (پایین).
+- **مک:** از روی سورس بسازید (پایین). نسخهٔ مک هنوز notarize نشده، پس اولین اجرا باید از *System Settings → Privacy & Security → Open Anyway* انجام شود.
 
-**macOS** — requirements: macOS 15+, Xcode 16+, [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+## ساخت از سورس
+
+### ویندوز
+
+نیازمندی‌ها: Rust (نسخهٔ پایدار)، Node.js نسخهٔ ۲۰ به بالا، Visual Studio Build Tools (بخش C++) و WebView2.
+
+```powershell
+cd windows
+npm install
+npm run tauri dev
+```
+
+جزئیات نصب‌کننده و نیازمندی‌هایش در [windows/README.md](windows/README.md) و [RELEASING.md](windows/RELEASING.md) آمده است.
+
+### مک
+
+نیازمندی‌ها: macOS نسخهٔ ۱۵ به بالا، Xcode نسخهٔ ۱۶ به بالا و [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 
 ```bash
 brew install xcodegen
-# from a checkout of this repository
 cd NotchBuddy
 xcodegen
-open NotchBuddy.xcodeproj   # then ⌘R
+open NotchBuddy.xcodeproj
 ```
 
-**Windows** — requirements: [Rust](https://rustup.rs), Node 20+, MSVC build tools.
+## راه‌اندازی
 
-```powershell
-# from a checkout of this repository
-cd windows
-npm install
-npm run pack                # installer lands in windows/release/
-```
+۱. از آیکن سینی (ویندوز) یا آیکن نوار منو (مک)، تنظیمات را باز کنید.
+۲. با حساب رودیپ وارد شوید.
+۳. برای Claude Code گزینهٔ *Install hooks* را بزنید، تغییرات را بررسی کنید و تأیید کنید.
+۴. برای صدا، کلید API خودتان را از OpenAI وارد کنید. هزینهٔ گفتگوی صوتی از طرف OpenAI حساب می‌شود.
+۵. در صورت نیاز، کلید یکپارچه‌سازی‌ها (Stripe، GitHub و بقیه) را اضافه کنید.
 
-## Setup
+اگر رودیپ بسته یا کند باشد، Claude Code هیچ‌وقت قفل نمی‌شود: هوک بعد از ۳۰۰ میلی‌ثانیه دست می‌کشد.
 
-Click the Roadeep icon in the menu bar (macOS) or in the system tray (Windows) → **Settings…**
+## حریم خصوصی و امنیت
 
-| What | Why | Where the key goes |
-|---|---|---|
-| **Claude Code hooks** | live sessions and approvals | **Install hooks** — Roadeep backs up `~/.claude/settings.json`, merges its hooks and shows you the diff before writing anything |
-| **Anthropic API key** | chat and questions about files | Keychain / Windows Credential Manager |
-| Stripe, n8n, GitHub, Vercel, Resend, Notion, Cal.com | the integration pills | Keychain / Windows Credential Manager, all optional |
+- تلمتری ندارد و شناسهٔ تبلیغاتی جمع نمی‌کند.
+- اطلاعات حساس (نشست رودیپ و کلیدهای API) در Credential Manager ویندوز یا Keychain مک ذخیره می‌شوند، نه در فایل ساده.
+- برنامه فقط به سرویس‌هایی وصل می‌شود که خودتان استفاده می‌کنید: رودیپ، OpenAI (فقط وقتی گفتگوی صوتی را شروع می‌کنید)، یکپارچه‌سازی‌هایی که تنظیم کرده‌اید، و GitHub فقط اگر به‌روزرسانی خودکار را فعال کنید.
+- حافظه و داده‌های برنامه‌ریز روی رایانهٔ خودتان می‌مانند.
+- فایل `settings.json` مربوط به Claude Code هیچ‌وقت بی‌صدا بازنویسی نمی‌شود: نسخهٔ پشتیبان با تاریخ گرفته می‌شود و تغییرات را قبلش می‌بینید.
 
-If Roadeep isn't running, the hook exits immediately: **Claude Code is never blocked.**
+## وضعیت فعلی
 
-## Things to try
+- **ویندوز** کامل‌ترین نسخه است. صدا، برنامه‌ریز، حافظه و کاراکتر جدید فقط در ویندوز هستند.
+- **مک** جزیرهٔ داخل نات، نشست‌ها و تأیید Claude Code، گفتگو و یکپارچه‌سازی‌ها را دارد.
+- بعضی فایل‌های این مخزن (صداها، آیکون‌ها و پوشهٔ `design/`) از پروژهٔ اصلی‌اند که نویسندهٔ اصلی رزروشان کرده است، و قبل از انتشار عمومی جایگزین می‌شوند. کاراکتر نسخهٔ مک هم هنوز همان طراحی اصلی است.
 
-| Do this | Mochi does that |
-|---|---|
-| Hover the notch (top edge on Windows) | peeks out and says hi 👋 |
-| Click it | opens |
-| Hover Mochi | blinks, eyes grow |
-| Click Mochi | squish + annoyed |
-| Click 3 times fast | 😵‍💫 dizzy for a few seconds |
-| Drag a file onto the island | turns into a box and swallows it |
-| Drag Mochi onto a window *(macOS)* | attaches it as context |
+## مجوز
 
-## How it works
+این مخزن سه نوع محتوا دارد:
 
-**macOS**
+۱. **کد و محتوای رودیپ**: اختصاصی. متن کامل در [LICENSE-ROADEEP.md](LICENSE-ROADEEP.md).
+۲. **کد پروژهٔ متن‌باز اصلی** (© ۲۰۲۶ Louis Raillé): MIT. متن کامل در [LICENSE](LICENSE) است و اعلان آن سر جایش می‌ماند.
+۳. **کاراکتر، آیکون‌ها و صداهای پروژهٔ اصلی**: رزروشده توسط نویسندهٔ اصلی. ببینید [LICENSE-ASSETS.md](LICENSE-ASSETS.md).
 
-- **Island**: a borderless `NSPanel` hugging the notch, driven by a small state machine (`hidden → petit → home`).
-- **Character**: drawn in SwiftUI `Canvas` + `TimelineView` at 60 fps — squircle body, eyes projected on a sphere, spring animations. No Rive, no Lottie, no images.
-- **Claude Code**: a tiny `nb-hook` script receives hook events and forwards them over a Unix socket to the app. For approvals it waits for your click, then answers the hook.
-- **Integrations**: lightweight pollers, paused when nothing is watching.
-- **Sounds**: 28 short WAVs played through preloaded `AVAudioPlayer`s.
+اجزای شخص ثالث مجوز خودشان را دارند: حرکت کاراکتر در `windows/src/character/bloub/` (MIT، © Jérémy Perret) و زمان‌اجراهای مدل‌های محلی که در `windows/scripts/local-ai-licenses/` فهرست شده‌اند.
 
-The macOS app is native Swift 6 / SwiftUI / AppKit with **zero third-party dependencies**.
+## سپاس‌گزاری
 
-**Windows**
+بر پایهٔ پروژهٔ متن‌باز Louis Raillé (MIT) ساخته شده است. رودیپ توسط Damyar-Roadeep منتشر می‌شود.
 
-- A [Tauri 2](https://tauri.app) app (Rust + TypeScript): the island is a transparent, always-on-top window that never steals focus, Mochi is drawn in Canvas 2D with the same shapes, timings and sounds as on the Mac.
-- Claude Code hooks go through a tiny `roadeep-hook.exe` and a named pipe; keys live in Windows Credential Manager.
-- Details and differences in [`windows/README.md`](windows/README.md).
+## تماس
 
-## Contributing
-
-Issues and PRs are very welcome — new integrations, new emotes, new sounds, bug fixes. See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Credits
-
-Built by [Louis Raillé](https://louisraille.fr) with Claude Code.
-Inspired by the notch-companion concepts shared by design studios — this project is independent and not affiliated with any of them.
-
-## License
-
-- **Code:** [MIT](LICENSE) — use it, fork it, learn from it, just keep the copyright notice.
-- **Original project name, Mochi character, icon, sounds and media:** © Louis Raillé, all rights reserved — see [LICENSE-ASSETS.md](LICENSE-ASSETS.md). Shipping your own fork? Give it your own name and character.
-
-<div align="center">
-
-**If Mochi made you smile, a ⭐ helps a lot.**
-
-[Privacy](docs/privacy.html) · [Terms](docs/terms.html) · [Support](docs/support.html)
-
-</div>
+[roadeep.com](https://roadeep.com)

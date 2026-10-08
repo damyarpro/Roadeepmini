@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { registerMessages, setLanguage } from "../core/i18n";
 import { settingsDashboard, settingsDestination, SETTINGS_CATEGORIES, SETTINGS_GROUPS, type SettingsCategory } from "./dashboard";
-registerMessages({"assistant.settingsTitle":"Assistant","plannerSettings.title":"Planner","mcpc.title":"MCP servers"},{"assistant.settingsTitle":"دستیار","plannerSettings.title":"برنامه‌ریز","mcpc.title":"سرورهای MCP"});
+registerMessages({"assistant.settingsTitle":"Assistant","plannerSettings.title":"Planner","mcpc.title":"MCP servers","shortcuts.title":"Shortcuts"},{"assistant.settingsTitle":"دستیار","plannerSettings.title":"برنامه‌ریز","mcpc.title":"سرورهای MCP","shortcuts.title":"میان‌برها"});
 
 function fixture(initial?: ReturnType<typeof settingsDestination>) {
  const panes = Object.fromEntries(SETTINGS_CATEGORIES.map(item => {
@@ -17,7 +17,7 @@ afterEach(() => {document.body.replaceChildren();setLanguage("fa");});
 describe("settings dashboard navigation", () => {
  it("defaults to discoverable dashboard and makes every retained pane inert", () => {
   const {view,panes}=fixture();expect(view.destination).toBe("dashboard");
-  expect(view.element.querySelectorAll("button[data-nav]")).toHaveLength(8);
+  expect(view.element.querySelectorAll("button[data-nav]")).toHaveLength(9);
   for(const pane of Object.values(panes)){expect(pane.hidden).toBe(true);expect(pane.inert).toBe(true);}
  });
  it("validates routes and preserves the Claude deep link", () => {
@@ -27,7 +27,7 @@ describe("settings dashboard navigation", () => {
  });
  it("groups every real category once by purpose, without dropping functionality",()=>{
   const {view}=fixture();expect(view.element.querySelectorAll(".settings-category-group")).toHaveLength(3);
-  const grouped=SETTINGS_GROUPS.flatMap(group=>[...group.categories]);expect(new Set(grouped).size).toBe(8);
+  const grouped=SETTINGS_GROUPS.flatMap(group=>[...group.categories]);expect(new Set(grouped).size).toBe(9);
   expect([...grouped].sort()).toEqual(SETTINGS_CATEGORIES.map(item=>item.id).sort());
  });
  it("focuses the existing pane heading instead of repeating its title in the app header",()=>{

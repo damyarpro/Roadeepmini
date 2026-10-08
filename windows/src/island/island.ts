@@ -7,7 +7,7 @@ import {
   EXPANDED_CORNER, EXPANDED_W, NOTCH_W,
   ROUNDED_CORNER, VIEW_LAYOUTS, botGlowColor, botGlowOpacity, botPosition, chatPromptHeight,
   islandSize, setChatMaxH,
-  type IslandMode, type IslandViewName,
+  type BotEmoteName, type IslandMode, type IslandViewName,
 } from "../core/layout";
 import { Sound } from "../core/sound";
 import { State } from "../core/state";
@@ -42,11 +42,12 @@ import { preserveActivityView } from "../views/activity";
 import {bindGlobalVoiceIsland,globalVoiceActive,globalVoiceIndicator,globalVoiceRemembered} from "../local/global-voice";
 import {approvalCleared} from "../local/approval-focus";
 import { HooksBridge, answersFit } from "../core/bridge-hooks";
+import { BridgeShortcuts } from "../core/bridge-shortcuts";
 import { cardView, endApproval, pendingQuestions } from "./approvals";
 
 const BOT_OVERHANG = 40;
-/** The question card with options to pick from: room for two rows of them. */
-const QUESTION_PICKER_H = 200;
+/** The question card with options to pick from grows by this much: room for two rows of them. */
+const QUESTION_PICKER_EXTRA_H = 40;
 /** A press that moves this far (px) becomes a drag of the island. */
 const DRAG_THRESHOLD = 6;
 
@@ -211,7 +212,7 @@ export class Island {
       },
       openTerminal: () => {
         const cwd = State.focusTask?.sessionCwd ?? null;
-        void Bridge.openInVSCode(cwd);
+        void BridgeShortcuts.openSession(State.focusTask?.sessionId ?? null, cwd);
       },
       // The ↗ button — same targets as openAgentTarget() on macOS.
       openTarget: () => {
@@ -241,7 +242,7 @@ export class Island {
         // its manifest's fixed page.
         const fromData = State.integrations[task.id]?.data?.openUrl;
         const fallback = task.isCatalog ? catalogOpenUrl(task.id) : null;
-        if (task.id === "integration_claude") void Bridge.openInVSCode(task.sessionCwd ?? null);
+        if (task.id === "integration_claude") void BridgeShortcuts.openSession(task.sessionId ?? null, task.sessionCwd ?? null);
         else if (task.id === "integration_n8n") void Bridge.openN8n();
         else if (urls[task.id]) void Bridge.openUrl(urls[task.id]);
         else if (isWebUrl(fromData)) void Bridge.openUrl(fromData);
@@ -408,12 +409,18 @@ export class Island {
           if (from === "greeting") State.view = State.defaultView();
           if (!this.wasInIsland) this.fsm.mouseLeft();
           break;
-        case "home":
+        case "home": {
           // A card waiting for an answer comes first: opening a folded island
-          // shows it again (Mac #117, #290).
-          this.expand(cardView() ?? State.defaultView());
+          // shows it again (Mac #117, #290), and the mouse never folds it.
+          const card = cardView();
+          if (card) {
+            State.isPinned = true;
+            this.fsm.pinned = true;
+          }
+          this.expand(card ?? State.defaultView());
           if (!this.wasInIsland) this.fsm.mouseLeft();
           break;
+        }
         case "greeting":
           this.expand("greeting");
           this.greeting.start();
@@ -619,6 +626,21 @@ export class Island {
     this.fsm.reveal();
   }
 
+  /** The character reacts to a shortcut (Ctrl+Alt+1..7). */
+  emote(name: BotEmoteName) {
+    this.engine.triggerEmote(name);
+    this.ensureRunning();
+  }
+
+  /** Ctrl+P: keep the open island from folding away, or let it fold again. */
+  setPinned(on: boolean) {
+    State.isPinned = on;
+    this.fsm.pinned = on || State.maximized;
+    if (on) this.fsm.cancelAutoClose();
+    else if (this.fsm.state === "home" && !State.maximized && !this.wasInIsland) this.fsm.mouseLeft();
+    State.notify();
+  }
+
   /** An alert stopped waiting for an answer: let the island auto-close again. */
   dropPin() {
     this.fsm.pinned = State.maximized;
@@ -647,12 +669,10 @@ export class Island {
     State.maximized = on;
     this.fsm.pinned = on || State.isPinned;
     if (on) {
-      this.homeCollapseAt = null;
       this.fsm.cancelAutoClose();
     } else if (this.fsm.state === "home" && !this.wasInIsland && !this.drag) {
       // Back to normal with the cursor elsewhere: the usual auto-close applies again.
       this.fsm.mouseLeft();
-      if (!State.isPinned) this.homeCollapseAt = performance.now() + State.settings.autoCloseInterval * 1000;
     }
     this.islandEl.classList.toggle("maximized", on);
     void Bridge.setMaximized(on, reducedMotion());
@@ -765,7 +785,6 @@ export class Island {
     if (!this.canDrag) return;
     const resume = State.mode === "expanded" ? { view: State.view, pinned: State.isPinned } : null;
     this.drag = { resume };
-    this.homeCollapseAt = null;
     this.cancelBotHover();
     if (resume) this.fsm.forcePetit();
     if (reducedMotion()) this.attach.set(0);
@@ -904,6 +923,9 @@ export class Island {
     let size = islandSize(State.mode, State.view, State.chatHistory.length, chatWantedHeight(),globalVoiceActive());
     if (State.maximized && State.mode === "expanded" && State.view === "prompt") {
       size = { w: this.layout.maxW, h: this.layout.maxH };
+    }
+    if (State.mode === "expanded" && State.view === "question" && pendingQuestions()) {
+      size = { w: size.w, h: size.h + QUESTION_PICKER_EXTRA_H };
     }
     const { w, h } = dockedSize(this.edge, State.mode, size);
     const r = State.mode === "expanded" ? EXPANDED_CORNER : ROUNDED_CORNER;
@@ -1117,8 +1139,14 @@ export class Island {
     });
 
     window.addEventListener("keydown", (e) => {
-      // Maximised, the chat only goes back with its button or "Minimize now".
-      if (e.key === "Escape" && State.mode === "expanded" && !State.isPinned && !State.maximized) this.collapse();
+      if (e.key === "Escape" && State.mode === "expanded") {
+        // Only keys typed into the island itself land here, never Escape typed
+        // in a terminal — so it may fold a waiting card away, as Escape in the
+        // notch does on macOS.
+        if (State.pendingApproval && (State.view === "approval" || State.view === "question")) this.foldApproval();
+        // Maximised, the chat only goes back with its button or "Minimize now".
+        else if (!State.isPinned && !State.maximized) this.collapse();
+      }
       State.lastActivity = performance.now();
     });
 
@@ -1160,13 +1188,9 @@ export class Island {
     if (inIsland && !this.wasInIsland) {
       if (this.fsm.state === "greeting") this.greeting.hover();
       this.fsm.mouseEntered();
-      this.homeCollapseAt = null;
     }
     if (!inIsland && this.wasInIsland) {
       this.fsm.mouseLeft();
-      if (this.fsm.state === "home" && !State.isPinned && !State.maximized) {
-        this.homeCollapseAt = performance.now() + State.settings.autoCloseInterval * 1000;
-      }
     }
     this.wasInIsland = inIsland;
 
@@ -1319,7 +1343,8 @@ export class Island {
     this.viewsEl.classList.toggle("hidden-by-upload", uploadActive);
 
     tickMiniBots(dt);
-    this.views.get(State.view)?.tick?.(nowMs);
+    // A ticker scroll that loses its frames freezes mid-way, rows overlapping.
+    const viewAnimating = this.views.get(State.view)?.tick?.(nowMs) === true;
     if (UploadSeq.isActive) this.stepSequence();
     this.updateCountdown(nowMs);
 
@@ -1336,7 +1361,7 @@ export class Island {
       ? settling
       : settling ||
         !this.botCx.settled || !this.botCy.settled || !this.botSize.settled ||
-        greetingActive || this.engine.busy || UploadSeq.isActive;
+        greetingActive || this.engine.busy || UploadSeq.isActive || viewAnimating;
 
     if (busy) {
       requestAnimationFrame(this.frame);
@@ -1424,13 +1449,16 @@ export class Island {
   }
 
   private updateCountdown(nowMs: number) {
-    if (State.mode !== "expanded" || State.isPinned || this.homeCollapseAt == null) {
+    // The state machine's own deadline, so the bar follows an auto-close delay
+    // edited while the countdown runs.
+    const dueAt = this.fsm.homeCollapseDueAt;
+    if (State.mode !== "expanded" || State.isPinned || dueAt == null) {
       this.countdown.style.width = "0px";
       return;
     }
-    const autoClose = State.settings.autoCloseInterval;
+    const autoClose = this.fsm.homeToPetitDelay;
     const windowS = Math.min(10, autoClose * 0.6);
-    const remaining = (this.homeCollapseAt - nowMs) / 1000;
+    const remaining = (dueAt - nowMs) / 1000;
     this.countdown.style.width =
       remaining < windowS ? `${Math.max(0, clamp(remaining / windowS, 0, 1) * 160)}px` : "0px";
   }
@@ -1443,6 +1471,8 @@ export class Island {
 
     this.contentEl.style.opacity = expanded && !greetingActive ? "1" : "0";
     this.contentEl.style.pointerEvents = expanded && !greetingActive ? "auto" : "none";
+    // Views nobody can see keep no animation running (views/island-cards.css).
+    this.viewsEl.classList.toggle("asleep", !expanded || greetingActive);
     this.greetingCanvas.style.display = greetingActive ? "block" : "none";
 
     this.voiceChip.classList.add("compact-voice-chip");
@@ -1501,4 +1531,15 @@ export class Island {
     // The OS reduced-motion preference is read here, at boot and on every settings change.
     const reduced = reducedMotion();
     BotEngine.setEyeMotion(effectiveEyeMotion(State.settings.eyeMotion ?? "normal", reduced));
-    BotEngine.setCelebrations(State.settings.celebrations ?? true, reduced
+    BotEngine.setCelebrations(State.settings.celebrations ?? true, reduced);
+    State.notify();
+  }
+
+  get panelSize() {
+    return { w: this.layout.panelW, h: this.layout.panelH };
+  }
+
+  get chatHeight() {
+    return chatPromptHeight(State.chatHistory.length, chatWantedHeight());
+  }
+}

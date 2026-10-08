@@ -312,14 +312,28 @@ pub fn write(install: bool, fingerprint: &str) -> Result<String, String> {
     text.push('\n');
 
     // Write beside the target and rename over it: a crash or a full disk leaves
-    // the original settings.json intact rather than half a file.
-    let temp = path.with_extension(format!("json.roadeep-{}", std::process::id()));
+    // the original settings.json intact rather than half a file. A dotfiles
+    // setup often makes settings.json a symlink: the file it points at is the
+    // one replaced, so the link survives.
+    let target = resolve_link(&path);
+    let temp = target.with_extension(format!("json.roadeep-{}", std::process::id()));
     std::fs::write(&temp, text.as_bytes()).map_err(|e| errors::coded(errors::CFG_WRITE, &[&e.to_string()]))?;
-    if let Err(err) = std::fs::rename(&temp, &path) {
+    if let Err(err) = std::fs::rename(&temp, &target) {
         let _ = std::fs::remove_file(&temp);
         return Err(errors::coded(errors::CFG_WRITE, &[&err.to_string()]));
     }
     Ok(backup.to_string_lossy().to_string())
+}
+
+/// The file a symlinked `path` points at, else `path` itself (a dangling link
+/// included: there is nothing behind it to write to).
+fn resolve_link(path: &Path) -> PathBuf {
+    let is_link = std::fs::symlink_metadata(path).map(|m| m.file_type().is_symlink()).unwrap_or(false);
+    if is_link {
+        std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
+    } else {
+        path.to_path_buf()
+    }
 }
 
 /// Copies roadeep-hook.exe into %LOCALAPPDATA%\com.roadeep.desktop\bin on launch.
@@ -459,6 +473,30 @@ mod tests {
     use super::*;
 
     const WHERE: &str = "settings.json";
+
+    #[test]
+    fn a_symlinked_settings_file_is_written_through_and_the_link_kept() {
+        let dir = std::env::temp_dir().join(format!("roadeep-link-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let real = dir.join("dotfiles-settings.json");
+        let link = dir.join("settings.json");
+        std::fs::write(&real, b"{}").unwrap();
+        assert_eq!(resolve_link(&real), real, "a plain file is itself");
+        assert_eq!(resolve_link(&dir.join("missing.json")), dir.join("missing.json"));
+        // Symlinks need Developer Mode or elevation on Windows; without them there
+        // is nothing more to check here.
+        if std::os::windows::fs::symlink_file(&real, &link).is_ok() {
+            let target = resolve_link(&link);
+            assert_eq!(std::fs::canonicalize(&real).unwrap(), target);
+            // What write() does: replace the target, never the link.
+            let temp = target.with_extension("json.roadeep-test");
+            std::fs::write(&temp, b"{\"a\":1}").unwrap();
+            std::fs::rename(&temp, &target).unwrap();
+            assert!(std::fs::symlink_metadata(&link).unwrap().file_type().is_symlink());
+            assert_eq!(std::fs::read(&link).unwrap(), b"{\"a\":1}");
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     #[test]
     fn a_utf8_bom_is_stripped_not_treated_as_corruption() {
