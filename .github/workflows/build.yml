@@ -2,9 +2,10 @@ name: Build
 
 on:
   push:
-    branches: [main]
+    branches: [main, "release/**"]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -39,6 +40,17 @@ jobs:
             -project NotchBuddy/NotchBuddy.xcodeproj \
             -scheme NotchBuddy \
             -configuration Release \
+            -derivedDataPath build/DerivedData \
             build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
+
+      - name: Package the macOS app
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent build/DerivedData/Build/Products/Release/Roadeep.app Roadeep-macOS.zip
+
+      - name: Upload the macOS app
+        uses: actions/upload-artifact@v4
+        with:
+          name: Roadeep-macOS
+          path: Roadeep-macOS.zip
