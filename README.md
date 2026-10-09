@@ -4,7 +4,7 @@
 
 **همراه دسکتاپ برای ویندوز و مک**: گفتگو، دستیار صوتی، برنامه‌ریز و تأیید درخواست‌های Claude Code، همیشه یک نگاه با شما فاصله دارد.
 
-![جزیرهٔ رودیپ با گفتگو و کارت Claude Code](docs/media/roadeep-island-chat.png)
+<img src="docs/media/roadeep-island-menu.png" alt="منوی فرمان جزیرهٔ رودیپ" width="480">
 
 </div>
 
@@ -37,11 +37,17 @@
 
 ## تصاویر و نمایش
 
-![منوی فرمان و برنامه‌ریز](docs/media/roadeep-island-menu.png)
+<p align="center">
+  <img src="docs/media/roadeep-island-settings.png" alt="تنظیمات جزیره" width="480">
+</p>
 
-![کاراکتر جزیره با حالت‌های مختلف](docs/media/roadeep-character.png)
+<p align="center">
+  <img src="docs/media/roadeep-character.png" alt="کاراکتر جزیره" width="500">
+</p>
 
-![نمایش کوتاه جزیره](docs/media/demo.gif)
+<p align="center">
+  <img src="docs/media/demo.gif" alt="نمایش کوتاه جزیره: جابه‌جایی بین منوی فرمان و تنظیمات" width="480">
+</p>
 
 ## نصب
 
